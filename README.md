@@ -9,17 +9,22 @@ unique local addresses, selects the correct account, and translates packets.
 Tailscale supplies authentication, encryption, transport, and access policy.
 Selected packet-engine code is adapted from Tailmix. No Tailmix installation is required.
 
-**Early development software. Releases currently contain source, not a ready-to-install app.**
-The local app's background service is bound to the user who built it. Portable
-ownership setup, Developer ID signing, and notarization are required before
-distributing an app to other users.
+**Early development software.** Expect rough edges and read the known limits below.
 
-## Install locally
+## Install
 
-Requirements: an Apple silicon Mac running macOS 26 or later, Xcode 27.2 or later,
-Go, Python 3.11 or later, and an Apple Development signing certificate with its
-private key in your login keychain. Xcode's Accounts settings can create the
-certificate. Complete Xcode's first-launch setup before building.
+Requires an Apple silicon Mac running macOS 26 or later.
+
+1. Download `Tailmulti-<version>-macOS.zip` from the [latest release](https://github.com/albertilagan/tailmulti/releases).
+2. Unzip it and move **Tailmulti.app** to Applications, then open it. The app is signed with Developer ID and notarized by Apple.
+
+The first Mac user who approves the background service becomes its only owner.
+
+## Build from source
+
+Requirements: Xcode 27.2 or later, Go, Python 3.11 or later, and an Apple Development
+signing certificate with its private key in your login keychain. Xcode's Accounts
+settings can create the certificate. Complete Xcode's first-launch setup before building.
 
 From an extracted source release or a local checkout:
 
@@ -32,6 +37,8 @@ The script chooses an installed Xcode with SDK 27.2 or newer, uses a local Apple
 Development certificate, and builds a separate candidate for your Mac user.
 It does not install a helper or change networking. Go downloads the pinned
 toolchain and dependencies on the first build.
+
+## First run
 
 In Tailmulti:
 

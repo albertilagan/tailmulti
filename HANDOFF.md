@@ -18,10 +18,10 @@ confirmation is still pending. Do not call the menu fully validated.
 
 ## Public release preparation
 
-The first release workflow creates a draft source prerelease after macOS checks.
-It deliberately does not upload local app bundles. Their helper owner UID is
-embedded at build time. Portable ownership provisioning, Developer ID signing,
-notarization and broader live acceptance remain prerequisites for binary releases.
+The release workflow creates a draft prerelease after macOS checks: a Developer ID
+signed, notarized app zip plus the source archive. The service binds its owner to
+the console user on first start, so one build works for any Mac user. Clean-Mac,
+multi-user and broader live acceptance remain outstanding.
 
 Use SDK 27.2 or newer and minimum macOS 26. `scripts/build-local.sh` stages a
 separate signed candidate using a local development certificate. `scripts/check.sh`
