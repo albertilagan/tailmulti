@@ -1,0 +1,12 @@
+* text=auto
+*.sh text eol=lf
+*.py text eol=lf
+*.go text eol=lf
+*.swift text eol=lf
+*.yml text eol=lf
+*.json text eol=lf
+/.local-notes export-ignore
+/.cache export-ignore
+/build export-ignore
+/dist export-ignore
+/AGENTS.md export-ignore

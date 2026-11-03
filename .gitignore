@@ -1,0 +1,27 @@
+# Generated output and local toolchains
+/.cache/
+/build/
+/dist/
+**/.build/
+**/__pycache__/
+*.py[cod]
+.DS_Store
+
+# Private session notes, signing material and local configuration
+/.local-notes/
+/AGENTS.md
+/CLAUDE.md
+/CLAUDE.local.md
+.env
+.env.*
+!.env.example
+*.p12
+*.pfx
+*.mobileprovision
+*.provisionprofile
+*.keychain-db
+*.xcuserstate
+xcuserdata/
+/.claude/
+/.codex/
+/.si/

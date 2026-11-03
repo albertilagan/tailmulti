@@ -1,0 +1,9 @@
+{
+  "version": 1,
+  "files": [
+    ".editorconfig", ".gitattributes", ".gitignore",
+    "CHANGELOG.md", "CONTRIBUTING.md", "HANDOFF.md", "LICENSE", "NOTICE",
+    "README.md", "SECURITY.md", "release-manifest.json"
+  ],
+  "directories": [".github", "docs", "engine", "macos", "scripts", "upstream"]
+}

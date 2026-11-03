@@ -1,0 +1,14 @@
+version: 2
+updates:
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: monthly
+  - package-ecosystem: gomod
+    directory: /engine
+    schedule:
+      interval: monthly
+    open-pull-requests-limit: 5
+    ignore:
+      # Adapted tsnet/netns code tracks one Tailscale revision; update it manually with provenance review.
+      - dependency-name: tailscale.com

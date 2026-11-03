@@ -1,0 +1,27 @@
+name: Bug report
+description: Report a reproducible Tailmulti problem.
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Remove account names, device hostnames, private domains and addresses from logs and screenshots.
+        Never attach state files, keys, login links or signing certificates.
+        See SECURITY.md for sensitive vulnerability reports.
+  - type: input
+    id: version
+    attributes:
+      label: Tailmulti version and macOS version
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      description: Include expected behavior and what actually happened.
+    validations:
+      required: true
+  - type: textarea
+    id: diagnostics
+    attributes:
+      label: Redacted diagnostics
+      description: Use Tailmulti's diagnostics, not account state files. Review the text before posting.

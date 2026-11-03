@@ -1,0 +1,211 @@
+{
+  "repository": "https://github.com/maisem/tailmix",
+  "revision": "98d62fed39d388b8eb47b77fcb190a165e08a075",
+  "files": [
+    {
+      "path": "effectiveip/effectiveip.go",
+      "sha256": "04e004bd8f21ab0d23124d6df5b43501103cdae814fe8bf7bb0d42cd56bcb4c4"
+    },
+    {
+      "path": "effectiveip/effectiveip_test.go",
+      "sha256": "df63fd9665570352dba49419aeebebc76687bfd3992700c031ba720cdcb96ef9"
+    },
+    {
+      "path": "effectiveip/activity.go",
+      "sha256": "429a619173b0f62ab29f35b65c2e1443be2d81aae724073ffa55a6372ed04651"
+    },
+    {
+      "path": "effectiveip/activity_test.go",
+      "sha256": "b4719b2fcbb700dd9d6e11cdf820f568f7d8e207dc5a7ddd4afa1edb3b817a51"
+    },
+    {
+      "path": "packetmap/packetmap_test.go",
+      "sha256": "8d89223b65802976e5eae85c88bd40a08356c5d564c8554e5d6df362ce65e112"
+    },
+    {
+      "path": "packetmap/packetmap.go",
+      "sha256": "0016c91e645186f49b8cba91154553a3ceb50cd7d12383c1a507e19a710d2bd3"
+    },
+    {
+      "path": "tunmux/chantun_test.go",
+      "sha256": "58f75f99c85e2aff46f61c3d7494c1a626e55e0e65ad1cc9e40802035b3670b0"
+    },
+    {
+      "path": "tunmux/mux.go",
+      "sha256": "0f66233da8ff940aa4348c18a0fa5b9369c4a71c83a8b3f99da892f58f2345c7"
+    },
+    {
+      "path": "tunmux/chantun.go",
+      "sha256": "db78142d308f7687ffea2586e3d8c6dd25eb8fa256ef89144c9dc6672d5cd68f"
+    },
+    {
+      "path": "tunmux/packet.go",
+      "sha256": "9a95371c29adad85156dac96be87e22d48a34b25dd0ae1e6238591de78df3e69"
+    },
+    {
+      "path": "tunmux/mux_test.go",
+      "sha256": "bd7edd8f076b414b3b4b0865f2dd00a9172e9f66818760ef19e3cb32648ec0c8"
+    },
+    {
+      "path": "hosttun/hosttun_darwin_test.go",
+      "sha256": "d3f6a9d01a47f603b2c5cceb0d0a12926fe3178fbbdb4f01deb87fad5dbd1611"
+    },
+    {
+      "path": "hosttun/hosttun_linux.go",
+      "sha256": "80e705f691107e7fa06d716dd24d7e61d66cd4ba58631e54260db235114e1ecb"
+    },
+    {
+      "path": "hosttun/hosttun_darwin.go",
+      "sha256": "882545a838875fc29fbaa11200f3b2ae783f41c774fb7084632df855f661014b"
+    },
+    {
+      "path": "hosttun/hosttun_test.go",
+      "sha256": "f9fad7a332146e7935cc6084b4fb23bc6298026a16e14069b7fd2315612af12d"
+    },
+    {
+      "path": "hosttun/hosttun_unsupported.go",
+      "sha256": "0fa6ca48cd03e58964aa8c0d485263206956a4435cc60e67a5270d547118e657"
+    },
+    {
+      "path": "hosttun/hosttun_linux_test.go",
+      "sha256": "a0ffffaa329af8fcca9b3defb9375b650fa4801099dcf37866dad56342ecc1c3"
+    },
+    {
+      "path": "hosttun/installed_darwin.go",
+      "sha256": "9004f92febf989a6ddaaf610cd08574a09009bced5d04eef51a2bf3588a98566"
+    },
+    {
+      "path": "hosttun/hosttun.go",
+      "sha256": "10853073ea50aed13dfea3a7dc44c87b9a855d640195e552e1210ac4d337295f"
+    },
+    {
+      "path": "tsnet/tsnet.go",
+      "sha256": "df3e003dfede4720411e79887b1d23a73d8ae74d45ad64de740d96ffd8e0311f"
+    },
+    {
+      "path": "tsnet/underlay_darwin_test.go",
+      "sha256": "a26db58816dfaeccac11826ecbfc3fcf33ef0565e9be7716c4454af849e787e0"
+    },
+    {
+      "path": "tsnet/LICENSE",
+      "sha256": "a7ca6186a7963a0a60740f6047760eecd7a0234e8c38bd7e1e0bbcb324bda45b"
+    },
+    {
+      "path": "tsnet/underlay_darwin.go",
+      "sha256": "bcb8eb3f2bb8b07b53e10520e3db9d160318b9381ab15c18e1028069926bfd79"
+    },
+    {
+      "path": "tsnet/underlay_default.go",
+      "sha256": "dab2dee337d0c0405cf6b90f04f66586b8fd70865a95639d8eaa6b05dc66c47e"
+    },
+    {
+      "path": "tsnet/README.md",
+      "sha256": "3474c38f66149df7b81c0f006daf32f54f71a2072f55ab7c66fbc02acb000976"
+    },
+    {
+      "path": "tsnet/tsnet_test.go",
+      "sha256": "e94f4251b5c16ff690cdcd2638930b31b8dbd3c5a33170c239c88a039c855341"
+    },
+    {
+      "path": "tsnet/maybe_acme.go",
+      "sha256": "d1030274b895d12cec03b575ca0bb4e447aef95031b31b889c547bf1cda5ea82"
+    },
+    {
+      "path": "tsnet/UPSTREAM",
+      "sha256": "c7e8a181a7c9e06a8c97e96a7a316c38a5929627094adb6e98ffac8ff68e3c0a"
+    },
+    {
+      "path": "netns/underlay_darwin_test.go",
+      "sha256": "accbc1ba315fcce2c79c06f7c56a416f908946483aab62067326bbaa19f2a905"
+    },
+    {
+      "path": "netns/netns_linux.go",
+      "sha256": "cbab8075a091052d367fb040c333f973fc40e3bac940cf348cb36712f453a9e1"
+    },
+    {
+      "path": "netns/LICENSE",
+      "sha256": "a7ca6186a7963a0a60740f6047760eecd7a0234e8c38bd7e1e0bbcb324bda45b"
+    },
+    {
+      "path": "netns/underlay_darwin.go",
+      "sha256": "b045415c88adc6e596f365bb68efdc64a7ea735bf335e26c188a116613d7f38a"
+    },
+    {
+      "path": "netns/netns_darwin.go",
+      "sha256": "fef7f53232d6d7acacca16f2ab0bbe7c055ea273bfd14459e437b2df7c715b41"
+    },
+    {
+      "path": "netns/netns.go",
+      "sha256": "58419ed63f7620a4e199479d9ca86aad165ada70ce39ff77d36a1e3a22d77f54"
+    },
+    {
+      "path": "netns/netns_linux_test.go",
+      "sha256": "f6a30a4d25c220677bdea20bb8d5fb4e84f417cc1078f1f349fef786ed6940b5"
+    },
+    {
+      "path": "netns/netns_dw.go",
+      "sha256": "a0857e467e3c054bf1b9e78eb707c93ce6910617534d97a68bc001056f27fa0b"
+    },
+    {
+      "path": "netns/netns_openbsd.go",
+      "sha256": "d1d2e7ff1a2ea88e4639c3ce6644836ed15d9f567e5aa4a29597c1f78fbc2c6f"
+    },
+    {
+      "path": "netns/README.md",
+      "sha256": "c0fa8f1eeac2e0d01292a5d8fb7b1ecd1d89c15608a13e5d8c6c6400c6e4ebd9"
+    },
+    {
+      "path": "netns/netns_windows_test.go",
+      "sha256": "c98fb286ac3e1789789eae4a334f4af1e258f9c295c1bbcc476d9b5461d28eff"
+    },
+    {
+      "path": "netns/netns_test.go",
+      "sha256": "607ba408551edf881fa9724113eb84d8ac4584d2ded8081911f16228a54d797f"
+    },
+    {
+      "path": "netns/socks.go",
+      "sha256": "b0b0e75a65944110b9305288f42f952499f2ddd6dc778d3af6fcdfb64ad416e2"
+    },
+    {
+      "path": "netns/zsyscall_windows.go",
+      "sha256": "68f6457a90789bd2aed1bb7d3dbcedfed82dc82c5d821575050485e6320061b4"
+    },
+    {
+      "path": "netns/netns_windows.go",
+      "sha256": "3072dff60b886324698304f047b3f824f99f001c5887a249dc1212227ea9a461"
+    },
+    {
+      "path": "netns/mksyscall.go",
+      "sha256": "adf728226fd642edae5f9d3d6da217afb47a9217e25df3be9fa66917b0a4bc90"
+    },
+    {
+      "path": "netns/netns_default.go",
+      "sha256": "f6322ee213afc8cb1f3caab847b39400352f15cefe29dff6529f4a63df6705ac"
+    },
+    {
+      "path": "netns/netns_darwin_test.go",
+      "sha256": "88b6e5e339716905d842b261c3426c06166df6f8ccdc3d53907cfebe57ecd009"
+    },
+    {
+      "path": "netns/UPSTREAM",
+      "sha256": "e69e68483eea9896fb10ba209d26d38f6f8ba6fce54d796386bc97688d7c1867"
+    },
+    {
+      "path": "netns/netns_android.go",
+      "sha256": "399e6ece5e67cba03e5fd45c3bb480b3bb7975b24015a43fc5c87d291aa66ba8"
+    },
+    {
+      "path": "profile/profile.go",
+      "sha256": "7fbc25821b37083889dc2d0bbfec23833629953e482624bb3b28b17edc72e34b"
+    },
+    {
+      "path": "profile/tsnetengine.go",
+      "sha256": "62b2628fe1e739537ec2cfcc5579904f74486294b2760d19db3db2fcef4f7871"
+    },
+    {
+      "path": "profile/tsnetengine_test.go",
+      "sha256": "2d2fe751eee6dc4d983989a5136b5b651fe27a80d25f673be4ee0ffee70c8dc1"
+    }
+  ],
+  "adaptations": "See ADAPTATIONS.md; reference snapshot remains immutable."
+}

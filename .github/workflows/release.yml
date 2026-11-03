@@ -1,0 +1,53 @@
+name: Draft source prerelease
+
+on:
+  push:
+    tags: ['v[0-9]*']
+
+permissions:
+  contents: read
+
+concurrency:
+  group: source-release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  checks:
+    uses: ./.github/workflows/ci.yml
+    permissions:
+      contents: read
+
+  draft:
+    needs: checks
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    permissions:
+      contents: write
+    env:
+      PYTHONDONTWRITEBYTECODE: "1"
+      RELEASE_TAG: ${{ github.ref_name }}
+    steps:
+      - uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
+        with:
+          persist-credentials: false
+      - name: Check exact tagged source
+        run: python3 scripts/audit-source.py --clean-checkout
+      - name: Package source and checksum
+        run: python3 scripts/package-source.py "$RELEASE_TAG"
+      - name: Create draft only
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          # Drafts do not reserve their tag, so a rerun would otherwise create a duplicate.
+          existing=$(gh api "repos/$GH_REPO/releases" --paginate --jq '.[] | select(.tag_name == env.RELEASE_TAG) | .id')
+          if [ -n "$existing" ]; then
+            echo "A release or draft for $RELEASE_TAG already exists; review or delete it first." >&2
+            exit 1
+          fi
+          gh release create "$RELEASE_TAG" \
+            "dist/tailmulti-${RELEASE_TAG}-source.tar.gz" \
+            "dist/tailmulti-${RELEASE_TAG}-source.sha256" \
+            --verify-tag --draft --prerelease --latest=false \
+            --title "Tailmulti ${RELEASE_TAG} · source prerelease" \
+            --notes-file docs/SOURCE_RELEASE_NOTES.md

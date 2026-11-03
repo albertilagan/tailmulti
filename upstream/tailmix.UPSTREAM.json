@@ -1,0 +1,12 @@
+{
+  "repository": "https://github.com/maisem/tailmix",
+  "revision": "98d62fed39d388b8eb47b77fcb190a165e08a075",
+  "revision_url": "https://github.com/maisem/tailmix/commit/98d62fed39d388b8eb47b77fcb190a165e08a075",
+  "archive_url": "https://codeload.github.com/maisem/tailmix/tar.gz/98d62fed39d388b8eb47b77fcb190a165e08a075",
+  "archive_sha256": "424e893e8a13a6abc814fa0a5c2a41b4b225de5cc739245f8abf21f56d08d80f",
+  "source_directory": "upstream/tailmix",
+  "license": "BSD-3-Clause; nested forks retain their original notices",
+  "imported_file_count": 185,
+  "modified": false,
+  "status": "Reference snapshot only; not installed, executed, built, or tested."
+}

@@ -1,0 +1,23 @@
+Tailmulti
+Copyright (c) 2026 Tailmulti contributors.
+
+Tailmulti's original code is licensed under the BSD 3-Clause license in LICENSE.
+Existing notices and licenses in adapted code remain in force.
+
+Selected engine packages derive from Tailmix by Maisem Ali, licensed under
+BSD-3-Clause. The original notice is preserved in engine/LICENSE. The exact
+revision, imported file hashes and adaptations are recorded in engine/UPSTREAM.json
+and engine/ADAPTATIONS.md.
+
+The tsnet and netns adapters include Tailscale code and preserve their upstream
+BSD-3-Clause notices in engine/tsnet/LICENSE and engine/netns/LICENSE. Other linked
+dependencies retain their own licenses. App bundles include their license and
+notice files, module versions, and the Go runtime license under
+Contents/Resources/Licenses. Missing dependency notices fail the bundle build.
+
+upstream/tailmix is an unmodified reference snapshot. Its original licenses,
+copyrights, branding and nested third-party notices are preserved. Its install,
+update and release scripts are reference material, not Tailmulti automation.
+
+Tailmulti is an independent project and is not affiliated with or endorsed by
+Tailscale or Tailmix. Their names identify the projects whose code we use.
