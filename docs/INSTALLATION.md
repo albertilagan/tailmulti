@@ -1,10 +1,31 @@
-# Local installation
+# Installation
 
-There is no portable, notarized Tailmulti download yet. Source prereleases are
-for developers building on their own Mac. An app built for somebody else's macOS
-user must not be reused: its helper embeds that builder's control UID.
+## Download
 
-## Build and open
+Use an Apple silicon Mac with macOS 26 or later. Download `Tailmulti-<version>-macOS.zip`
+from the [releases page](https://github.com/albertilagan/tailmulti/releases), check it
+against the matching `.sha256` file if you like, unzip it, and move Tailmulti.app to
+Applications before opening it. Release builds are signed with Developer ID and
+notarized by Apple.
+
+## Ownership
+
+The background service has a single owner: the Mac user signed in at the screen
+when the service first starts, which is normally the person who just approved it.
+That user and root are the only ones who can control it. Another user on the same
+Mac sees "set up for another user account" and cannot read or change its accounts.
+The owner is stored in a root-owned policy file and survives updates and service
+removal, so the same user can reinstall without signing in to accounts again.
+
+To hand Tailmulti to a different Mac user, the current owner turns it off and
+removes the background service, then an administrator deletes all of its saved
+data, including every account sign-in:
+
+```sh
+sudo rm -rf "/Library/Application Support/Tailmulti"
+```
+
+## Build from source
 
 Use an Apple silicon Mac with macOS 26 or later, Xcode 27.2 or later, Go, Python
 3.11 or later, and a valid Apple Development certificate with its private key.
@@ -50,15 +71,15 @@ The single Tailmulti switch turns everything off and restores normal DNS.
 Sign-ins and account preferences stay saved. Turning it on reconnects the accounts
 that were enabled. Closing the app window is not a disconnect action.
 
-Keep the approved app in place. Move it to your preferred location before allowing
-the background service, and do not replace or move a registered bundle. Relocation
+Keep the approved app in place. Move it to your preferred location, usually
+Applications, before allowing the background service, and do not replace or move a registered bundle. Relocation
 and boot-before-login behavior still need live acceptance testing.
 
 ## Update or remove
 
-For a local update, build a new candidate first. In the old app, turn Tailmulti
+To update, download or build the new version first. In the old app, turn Tailmulti
 off, then open Settings → General → Advanced → Recovery and remove the background
-service. Quit the old app, open the new candidate, and allow its service. Both
+service. Quit the old app, open the new one, and allow its service. Both
 accounts are temporarily disconnected during this change. Account data stays saved.
 
 To remove the app, follow the same off/remove-service steps before deleting its

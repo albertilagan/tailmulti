@@ -135,12 +135,11 @@ final class PreviewNameTests: XCTestCase {
 
 final class ServiceBundleTests: XCTestCase {
     private var bundle: URL!
-    private let uid = getuid()
     private let teamSigned: ServiceBundle.SignatureCheck = { _, _, expected in
         if let expected, expected != "ABCDE12345" { throw ControlError("team") }
         return "ABCDE12345"
     }
-    private func verify() throws -> VerifiedService { try ServiceBundle.verify(bundle: bundle, uid: uid, signature: teamSigned) }
+    private func verify() throws -> VerifiedService { try ServiceBundle.verify(bundle: bundle, signature: teamSigned) }
 
     override func setUpWithError() throws {
         bundle = FileManager.default.temporaryDirectory.appendingPathComponent("tm-\(UUID().uuidString).app")
@@ -150,15 +149,15 @@ final class ServiceBundleTests: XCTestCase {
     }
     override func tearDownWithError() throws { try? FileManager.default.removeItem(at: bundle) }
 
-    private func stage(helper: String = "helper-binary", owner: Int? = nil, hash: String? = nil, version: Int = 2,
+    private func stage(helper: String = "helper-binary", hash: String? = nil, version: Int = 3,
                        signing: String = "development", label: String = "dev.tailmulti.tailmultid", team: String = "ABCDE12345",
                        plist: [String: Any]? = nil) throws {
         try Data(helper.utf8).write(to: bundle.appendingPathComponent(ServiceBundle.bundleProgram))
         let digest = hash ?? SHA256.hash(data: Data(helper.utf8)).map { String(format: "%02x", $0) }.joined()
-        let manifest = #"{"version":\#(version),"ownerUID":\#(owner ?? Int(uid)),"helperSHA256":"\#(digest)","serviceLabel":"\#(label)","registration":"SMAppService","signingMode":"\#(signing)","signingTeam":"\#(team)"}"#
+        let manifest = #"{"version":\#(version),"helperSHA256":"\#(digest)","serviceLabel":"\#(label)","registration":"SMAppService","signingMode":"\#(signing)","signingTeam":"\#(team)"}"#
         try Data(manifest.utf8).write(to: bundle.appendingPathComponent("Contents/Resources/SetupManifest.json"))
         let definition = plist ?? ["Label": "dev.tailmulti.tailmultid", "BundleProgram": ServiceBundle.bundleProgram,
-                                   "ProgramArguments": ["tailmultid", "--service", "--owner-uid", String(uid)]]
+                                   "ProgramArguments": ["tailmultid", "--service"]]
         let data = try PropertyListSerialization.data(fromPropertyList: definition, format: .xml, options: 0)
         try data.write(to: bundle.appendingPathComponent("Contents/Library/LaunchDaemons/dev.tailmulti.tailmultid.plist"))
     }
@@ -173,21 +172,21 @@ final class ServiceBundleTests: XCTestCase {
     func testSigningModeStringIsNotTrusted() throws {
         try stage()
         // A manifest claiming a development signature still fails when the real signature check fails.
-        XCTAssertThrowsError(try ServiceBundle.verify(bundle: bundle, uid: uid, signature: { _, _, _ in throw ControlError("unsigned") }))
+        XCTAssertThrowsError(try ServiceBundle.verify(bundle: bundle, signature: { _, _, _ in throw ControlError("unsigned") }))
         // The default check uses the Security framework, which rejects this unsigned test bundle.
-        XCTAssertThrowsError(try ServiceBundle.verify(bundle: bundle, uid: uid))
+        XCTAssertThrowsError(try ServiceBundle.verify(bundle: bundle))
         // Ad-hoc builds are never offered registration and skip the team check.
         try stage(signing: "adhoc")
-        let adhoc = try ServiceBundle.verify(bundle: bundle, uid: uid, signature: { _, _, _ in XCTFail("checked ad-hoc"); return "" })
+        let adhoc = try ServiceBundle.verify(bundle: bundle, signature: { _, _, _ in XCTFail("checked ad-hoc"); return "" })
         XCTAssertNil(adhoc.team)
     }
 
-    func testRejectsWrongOwnerHashVersionLabelOrSigningMode() throws {
-        try stage(owner: Int(uid) + 1); XCTAssertThrowsError(try verify())
+    func testRejectsBuildTimeOwnerHashVersionLabelOrSigningMode() throws {
         try stage(hash: String(repeating: "0", count: 64)); XCTAssertThrowsError(try verify())
         let upper = SHA256.hash(data: Data("helper-binary".utf8)).map { String(format: "%02X", $0) }.joined()
         try stage(hash: upper); XCTAssertThrowsError(try verify())
-        try stage(version: 1); XCTAssertThrowsError(try verify())
+        // Version 2 manifests came from builds that embedded their owner.
+        try stage(version: 2); XCTAssertThrowsError(try verify())
         try stage(label: "other"); XCTAssertThrowsError(try verify())
         try stage(signing: "unknown"); XCTAssertThrowsError(try verify())
         try stage(team: "ZZZZZ99999"); XCTAssertThrowsError(try verify())
@@ -195,13 +194,13 @@ final class ServiceBundleTests: XCTestCase {
 
     func testRejectsUnexpectedServiceDefinitions() throws {
         let base: [String: Any] = ["Label": "dev.tailmulti.tailmultid", "BundleProgram": ServiceBundle.bundleProgram,
-                                   "ProgramArguments": ["tailmultid", "--service", "--owner-uid", String(uid)]]
+                                   "ProgramArguments": ["tailmultid", "--service"]]
         var absolute = base; absolute["Program"] = "/usr/local/bin/tailmultid"
-        var otherOwner = base; otherOwner["ProgramArguments"] = ["tailmultid", "--service", "--owner-uid", String(uid + 1)]
-        var extraArgs = base; extraArgs["ProgramArguments"] = ["tailmultid", "--service", "--owner-uid", String(uid), "--activate"]
+        var fixedOwner = base; fixedOwner["ProgramArguments"] = ["tailmultid", "--service", "--owner-uid", String(getuid())]
+        var extraArgs = base; extraArgs["ProgramArguments"] = ["tailmultid", "--service", "--activate"]
         var otherProgram = base; otherProgram["BundleProgram"] = "Contents/MacOS/Tailmulti"
         var otherLabel = base; otherLabel["Label"] = "com.example"
-        for plist in [absolute, otherOwner, extraArgs, otherProgram, otherLabel] {
+        for plist in [absolute, fixedOwner, extraArgs, otherProgram, otherLabel] {
             try stage(plist: plist)
             XCTAssertThrowsError(try verify())
         }

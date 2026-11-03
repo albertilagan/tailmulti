@@ -13,23 +13,6 @@ import (
 	"tailmulti.local/engine/internal/store"
 )
 
-func TestNativeServiceOwnerMustMatchSignedBuild(t *testing.T) {
-	if err := validateBundledOwner(501, "501"); err != nil {
-		t.Fatal(err)
-	}
-	for _, tc := range []struct {
-		owner    int
-		embedded string
-	}{
-		{502, "501"}, {0, "0"}, {-1, "501"}, {501, ""},
-		{501, "invalid"}, {501, "0"}, {501, "4294967295"},
-	} {
-		if validateBundledOwner(tc.owner, tc.embedded) == nil {
-			t.Fatal("invalid or reassigned build owner accepted")
-		}
-	}
-}
-
 func TestInactiveServicePreservesAccountsAcrossFailedActivation(t *testing.T) {
 	dir := filepath.Join(t.TempDir(), "state")
 	disk, err := store.Open(dir)

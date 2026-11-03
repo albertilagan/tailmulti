@@ -24,21 +24,57 @@ func ValidateInstallation(owner int) error {
 	return validatePolicyFile(OwnerPolicy, owner, 0)
 }
 
-// ProvisionInstallation runs only inside the approved, root SMAppService daemon.
-func ProvisionInstallation(owner int) error {
-	if os.Geteuid() != 0 || owner < 501 {
-		return errors.New("service provisioning requires root and a desktop owner")
+// ProvisionInstallation runs only inside the approved, root SMAppService daemon. An existing
+// policy keeps its owner; otherwise the user signed in at the console when the service first
+// starts, normally the one who just approved it, becomes the sole owner.
+func ProvisionInstallation() (int, error) {
+	if os.Geteuid() != 0 {
+		return 0, errors.New("service provisioning requires root")
 	}
 	if err := SecureParents(filepath.Dir(InstallRoot), 0); err != nil {
-		return err
+		return 0, err
 	}
 	if err := os.Mkdir(InstallRoot, 0755); err != nil && !errors.Is(err, os.ErrExist) {
-		return err
+		return 0, err
 	}
 	if err := SecureParents(InstallRoot, 0); err != nil {
-		return err
+		return 0, err
 	}
-	return provisionOwner(InstallRoot, owner, 0)
+	return bindOwner(InstallRoot, 0, consoleUser)
+}
+
+// consoleUser is the owner of /dev/console: the user at the login window session, or root when nobody is signed in.
+func consoleUser() (int, error) {
+	fi, err := os.Stat("/dev/console")
+	if err != nil {
+		return 0, errors.New("the signed-in user cannot be determined")
+	}
+	st, ok := fi.Sys().(*syscall.Stat_t)
+	if !ok {
+		return 0, errors.New("the signed-in user cannot be determined")
+	}
+	return int(st.Uid), nil
+}
+
+func bindOwner(dir string, fileOwner uint32, console func() (int, error)) (int, error) {
+	policy := filepath.Join(dir, "installation.json")
+	if _, err := os.Lstat(policy); err == nil {
+		return readPolicyFile(policy, fileOwner)
+	} else if !errors.Is(err, os.ErrNotExist) {
+		return 0, err
+	}
+	owner, err := console()
+	if err != nil {
+		return 0, err
+	}
+	if owner < 501 || owner >= 1<<32-2 {
+		// launchd retries; binding waits until a desktop user is signed in.
+		return 0, errors.New("no desktop user is signed in to own the service")
+	}
+	if err = provisionOwner(dir, owner, fileOwner); err != nil {
+		return 0, err
+	}
+	return owner, nil
 }
 
 func provisionOwner(dir string, owner int, fileOwner uint32) error {
@@ -96,32 +132,51 @@ func provisionOwner(dir string, owner int, fileOwner uint32) error {
 }
 
 func validatePolicyFile(path string, owner int, fileOwner uint32) error {
+	actual, err := readPolicyFile(path, fileOwner)
+	if err != nil {
+		return err
+	}
+	if actual != owner {
+		return errors.New("installation owner does not match this service")
+	}
+	return nil
+}
+
+func readPolicyFile(path string, fileOwner uint32) (int, error) {
 	fi, err := os.Lstat(path)
 	if err != nil || !fi.Mode().IsRegular() || fi.Mode().Perm()&0022 != 0 {
-		return errors.New("installation policy is missing or unsafe")
+		return 0, errors.New("installation policy is missing or unsafe")
 	}
 	st, ok := fi.Sys().(*syscall.Stat_t)
 	if !ok || st.Uid != fileOwner || fi.Size() > 4096 {
-		return errors.New("installation policy has invalid ownership or size")
+		return 0, errors.New("installation policy has invalid ownership or size")
 	}
 	data, err := os.ReadFile(path)
 	if err != nil {
-		return errors.New("installation policy cannot be read")
+		return 0, errors.New("installation policy cannot be read")
 	}
-	return validatePolicy(data, owner)
+	return parsePolicy(data)
 }
 
 func validatePolicy(data []byte, owner int) error {
+	actual, err := parsePolicy(data)
+	if err != nil || actual != owner {
+		return errors.New("installation owner does not match this service")
+	}
+	return nil
+}
+
+func parsePolicy(data []byte) (int, error) {
 	var p struct {
 		Version  int `json:"version"`
 		OwnerUID int `json:"ownerUID"`
 	}
 	d := json.NewDecoder(bytes.NewReader(data))
 	d.DisallowUnknownFields()
-	if d.Decode(&p) != nil || d.Decode(new(any)) != io.EOF || p.Version != 1 || p.OwnerUID <= 0 || p.OwnerUID != owner {
-		return errors.New("installation owner does not match this service")
+	if d.Decode(&p) != nil || d.Decode(new(any)) != io.EOF || p.Version != 1 || p.OwnerUID < 501 || p.OwnerUID >= 1<<32-2 {
+		return 0, errors.New("installation policy is invalid")
 	}
-	return nil
+	return p.OwnerUID, nil
 }
 
 // RestoreResolvers removes only owned DNS overrides; cached-address guards remain.

@@ -20,9 +20,6 @@ import (
 	"tailmulti.local/engine/internal/store"
 )
 
-// Set when bundling the signed local app; never taken from an IPC request.
-var bundledOwnerUID string
-
 func main() {
 	if err := run(); err != nil {
 		fmt.Fprintln(os.Stderr, "Tailmulti:", err)
@@ -34,10 +31,10 @@ func run() error {
 	managed := flag.Bool("service", false, "run the installed control service; networking starts inactive")
 	dir := flag.String("state-dir", "", "private absolute state directory; required in preview mode")
 	socket := flag.String("socket", "", "absolute control socket path; required in preview mode")
-	owner := flag.Int("owner-uid", -1, "sole authorized desktop user; required for activation")
+	owner := flag.Int("owner-uid", -1, "sole authorized desktop user; required for foreground activation")
 	recovery := flag.Bool("recovery-report", false, "show read-only cleanup guidance")
 	checkHost := flag.Bool("check-host", false, "print read-only host setup checks as JSON")
-	buildInfo := flag.Bool("build-info", false, "print embedded local-build information without starting a service")
+	buildInfo := flag.Bool("build-info", false, "print build information without starting a service")
 	flag.Parse()
 	if flag.NArg() != 0 {
 		return errors.New("unexpected arguments")
@@ -47,9 +44,9 @@ func run() error {
 			return errors.New("--build-info cannot be combined with other options")
 		}
 		return json.NewEncoder(os.Stdout).Encode(struct {
-			Version int    `json:"version"`
-			Owner   string `json:"bundledOwnerUID"`
-		}{Version: 1, Owner: bundledOwnerUID})
+			Version      int    `json:"version"`
+			OwnerBinding string `json:"ownerBinding"`
+		}{Version: 2, OwnerBinding: "first-console-user"})
 	}
 	if *activate && *managed {
 		return errors.New("choose service mode or foreground activation")
@@ -69,19 +66,21 @@ func run() error {
 	}
 	privileged := *activate || *managed
 	if privileged {
-		if os.Geteuid() != 0 || *owner <= 0 {
-			return errors.New("privileged modes require root and an explicit non-root --owner-uid")
+		if os.Geteuid() != 0 {
+			return errors.New("privileged modes require root")
+		}
+		if *managed == (*owner != -1) || (*activate && *owner < 501) {
+			return errors.New("foreground activation requires --owner-uid; the service determines its owner")
 		}
 		if *dir != "" || *socket != "" {
 			return errors.New("activated mode uses fixed system paths")
 		}
 		if *managed {
-			if err := validateBundledOwner(*owner, bundledOwnerUID); err != nil {
+			bound, err := host.ProvisionInstallation()
+			if err != nil {
 				return err
 			}
-			if err := host.ProvisionInstallation(*owner); err != nil {
-				return err
-			}
+			*owner = bound
 		}
 		if *activate && !host.Preflight(context.Background()).Ready {
 			return errors.New("host setup checks failed; run --check-host for details")
@@ -167,12 +166,4 @@ func run() error {
 	case <-muxErr:
 		return errors.New("host packet service stopped")
 	}
-}
-
-func validateBundledOwner(owner int, embedded string) error {
-	uid, err := strconv.ParseUint(embedded, 10, 32)
-	if err != nil || uid < 501 || uid >= 1<<32-1 || uint64(owner) != uid {
-		return errors.New("service owner must match the owner embedded in this app build")
-	}
-	return nil
 }

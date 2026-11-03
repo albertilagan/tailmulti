@@ -20,19 +20,19 @@ def signature_team(path: Path) -> str:
     return match[1] if match and match[1] != "not" else ""
 
 
-def configure(app: Path, owner: int, signing_config: str) -> None:
-    if not 501 <= owner < 2**32 - 1:
-        raise ValueError("A desktop owner is required")
+def configure(app: Path, signing_config: str) -> None:
     identity, mode = "-", "adhoc"
     if signing_config:
         config = json.loads(Path(signing_config).read_text())
         identity, mode = config["identity"], config["signingMode"]
-        if not re.fullmatch(r"[0-9A-Fa-f]{40}", identity) or mode != "development":
-            raise ValueError("Use an explicitly selected Apple Development signing identity")
+        if not re.fullmatch(r"[0-9A-Fa-f]{40}", identity) or mode not in ("development", "developer-id"):
+            raise ValueError("Use an explicitly selected Apple Development or Developer ID signing identity")
+    # Notarization requires a secure timestamp; local builds skip the network round trip.
+    timestamp = "--timestamp" if mode == "developer-id" else "--timestamp=none"
     launch_dir = app / "Contents/Library/LaunchDaemons"
     launch_dir.mkdir(parents=True, exist_ok=True)
     launch = {"Label": LABEL, "BundleProgram": HELPER,
-              "ProgramArguments": ["tailmultid", "--service", "--owner-uid", str(owner)],
+              "ProgramArguments": ["tailmultid", "--service"],
               "RunAtLoad": True, "KeepAlive": True, "ThrottleInterval": 10,
               "ProcessType": "Background", "Umask": 0o077}
     (launch_dir / (LABEL + ".plist")).write_bytes(plistlib.dumps(launch))
@@ -42,13 +42,13 @@ def configure(app: Path, owner: int, signing_config: str) -> None:
             team = signature_team(helper) if mode != "adhoc" else ""
             if mode != "adhoc" and not team:
                 raise ValueError("The signed helper has no Apple team identity")
-            manifest = {"version": 2, "ownerUID": owner,
+            manifest = {"version": 3,
                         "helperSHA256": hashlib.sha256(helper.read_bytes()).hexdigest(),
                         "serviceLabel": LABEL, "registration": "SMAppService",
                         "signingMode": mode, "signingTeam": team}
             (app / "Contents/Resources/SetupManifest.json").write_text(json.dumps(manifest, indent=2) + "\n")
         subprocess.run(["/usr/bin/codesign", "--force", "--sign", identity, "--identifier", identifier,
-                        "--options", "runtime", "--timestamp=none", str(path)], check=True, timeout=60)
+                        "--options", "runtime", timestamp, str(path)], check=True, timeout=60)
         subprocess.run(["/usr/bin/codesign", "--verify", "--strict", str(path)], check=True)
         if mode != "adhoc":
             subprocess.run(["/usr/bin/codesign", "--verify", "--strict", "-R",
@@ -61,7 +61,6 @@ def configure(app: Path, owner: int, signing_config: str) -> None:
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--app", type=Path, required=True)
-    parser.add_argument("--owner-uid", type=int, required=True)
     parser.add_argument("--signing-config", default="")
     args = parser.parse_args()
-    configure(args.app, args.owner_uid, args.signing_config)
+    configure(args.app, args.signing_config)
