@@ -28,7 +28,7 @@ focused check, not proof that every possible secret or private detail is absent.
 
 ## GitHub setup
 
-Enable Actions and private vulnerability reporting on the new repository. Protect
+Enable Actions, private vulnerability reporting and Dependabot security updates on the new repository. Protect
 the default branch and release tags. Require the Checks workflow before merging.
 Do not upload `.cache/`, `.local-notes/`, `build/`, `dist/`, local agent instructions
 (`AGENTS.md`, `CLAUDE.md`), signing identities or account state when initializing
