@@ -18,11 +18,14 @@ socket before claiming setup succeeded.
 | `/Library/Application Support/Tailmulti/state` | Private account identities and persistent mappings |
 | `/Library/Application Support/Tailmulti/run/control.sock` | Authenticated control interface |
 
-The local build embeds its desktop UID in the signed helper and launch arguments.
-Only that UID and root may use the control API. The Swift client checks the socket
-server's UID and validates the bundle's helper hash, arguments and Apple signing
-team before registration. This authenticates the local user, not each client
-process's code signature. Do not distribute this user-bound build to other Macs.
+The service binds its owner on first start: if no policy exists, the user who owns
+`/dev/console` (the one signed in at the screen) becomes the owner, and the
+root-owned policy is created before control opens. Later starts use the stored
+owner and never ask again. If nobody is signed in, the service exits and launchd
+retries. Only the owner and root may use the control API. The Swift client checks
+the socket server's UID and validates the bundle's helper hash, arguments and Apple
+signing team before registration. This authenticates the local user, not each
+client process's code signature.
 
 ## Networking
 

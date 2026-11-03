@@ -155,7 +155,6 @@ public enum SigningMode: String, Decodable, Sendable {
 
 public struct SetupManifest: Decodable, Equatable, Sendable {
     public let version: Int
-    public let ownerUID: Int
     public let helperSHA256: String
     public let serviceLabel: String
     public let registration: String
@@ -173,7 +172,8 @@ public struct VerifiedService: Equatable, Sendable {
     }
 }
 
-/// Checks that this app bundle carries the expected LaunchDaemon and helper for this user before offering registration.
+/// Checks that this app bundle carries the expected LaunchDaemon and helper before offering registration.
+/// The service binds its owner when it first starts, so any desktop user can install a release build.
 public enum ServiceBundle {
     public static let label = "dev.tailmulti.tailmultid"
     public static let bundleProgram = "Contents/Library/HelperTools/tailmultid"
@@ -181,18 +181,15 @@ public enum ServiceBundle {
     public typealias SignatureCheck = @Sendable (_ bundle: URL, _ helper: URL, _ expectedTeam: String?) throws -> String
 
     /// `signature` is the real Security-framework check by default; tests substitute it.
-    public static func verify(bundle: URL, uid: uid_t = getuid(),
+    public static func verify(bundle: URL,
                               signature: SignatureCheck = { try CodeSignature.verifyTeam(bundle: $0, helper: $1, expectedTeam: $2) }) throws -> VerifiedService {
         let manifestURL = bundle.appendingPathComponent("Contents/Resources/SetupManifest.json")
         guard isRegularFile(manifestURL), let data = try? Data(contentsOf: manifestURL), data.count < 64 * 1024 else {
             throw ControlError("This copy of Tailmulti doesn't include its background service.")
         }
-        guard let manifest = try? JSONDecoder().decode(SetupManifest.self, from: data), manifest.version == 2,
+        guard let manifest = try? JSONDecoder().decode(SetupManifest.self, from: data), manifest.version == 3,
               manifest.registration == "SMAppService", manifest.serviceLabel == label else {
             throw ControlError("This copy of Tailmulti has an unreadable service manifest.")
-        }
-        guard manifest.ownerUID == Int(uid) else {
-            throw ControlError("This build of Tailmulti was made for a different macOS user account.")
         }
         let hex = manifest.helperSHA256
         guard hex.count == 64, hex.allSatisfy({ "0123456789abcdef".contains($0) }) else {
@@ -206,7 +203,7 @@ public enum ServiceBundle {
         let plistURL = bundle.appendingPathComponent("Contents/Library/LaunchDaemons/" + plistName)
         guard isRegularFile(plistURL), let plistData = try? Data(contentsOf: plistURL),
               let plist = try? PropertyListSerialization.propertyList(from: plistData, format: nil) as? [String: Any],
-              plistIsExpected(plist, uid: uid) else {
+              plistIsExpected(plist) else {
             throw ControlError("The background service definition in this copy of Tailmulti isn't valid.")
         }
         // The manifest's signing mode is informational; registration needs a real team signature.
@@ -215,10 +212,10 @@ public enum ServiceBundle {
         return VerifiedService(plistName: plistName, signingMode: manifest.signingMode, team: team)
     }
 
-    static func plistIsExpected(_ plist: [String: Any], uid: uid_t) -> Bool {
+    static func plistIsExpected(_ plist: [String: Any]) -> Bool {
         guard plist["Label"] as? String == label, plist["BundleProgram"] as? String == bundleProgram,
               plist["Program"] == nil, let args = plist["ProgramArguments"] as? [String] else { return false }
-        return args == ["tailmultid", "--service", "--owner-uid", String(uid)]
+        return args == ["tailmultid", "--service"]
     }
 
     static func isRegularFile(_ url: URL) -> Bool {

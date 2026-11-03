@@ -36,7 +36,7 @@ func authorized(next http.Handler, owner string) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		uid, _ := r.Context().Value(uidKey{}).(string)
 		if uid == "" || (uid != "0" && uid != owner) {
-			reply(w, 403, map[string]string{"error": "access denied"})
+			reply(w, 403, map[string]string{"error": "Tailmulti on this Mac is set up for another user account."})
 			return
 		}
 		// No browser-originated requests or reverse-proxy routing.

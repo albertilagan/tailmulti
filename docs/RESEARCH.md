@@ -61,9 +61,9 @@ running as the selected user, not a particular client's code signature. There is
 no arbitrary command, supplied state path, auth-key parameter or raw LocalAPI proxy.
 
 The app registers its bundled daemon through SMAppService after a user action.
-The local build embeds its owner UID and verifies app/helper signatures from the
-same Apple team. This is suitable for a local development candidate; portable
-owner provisioning and notarized distribution are unfinished.
+The service binds its owner to the console user on first start, and the app
+verifies app/helper signatures from the same Apple team. Release builds are signed
+with Developer ID and notarized.
 
 Sources: [Tailscale peercred](https://github.com/tailscale/peercred),
 [SMAppService](https://developer.apple.com/documentation/servicemanagement/smappservice),

@@ -131,6 +131,56 @@ func TestInstallationOwnerIsImmutable(t *testing.T) {
 	}
 }
 
+func TestServiceBindsFirstConsoleUserOnce(t *testing.T) {
+	dir := t.TempDir()
+	uid := uint32(os.Geteuid())
+	console := 501
+	asked := 0
+	user := func() (int, error) { asked++; return console, nil }
+	owner, err := bindOwner(dir, uid, user)
+	if err != nil || owner != 501 || asked != 1 {
+		t.Fatalf("first start did not bind the console user: owner %d, err %v", owner, err)
+	}
+	// A different user at the console later must not take over the existing installation.
+	console = 502
+	owner, err = bindOwner(dir, uid, user)
+	if err != nil || owner != 501 || asked != 1 {
+		t.Fatalf("existing owner changed: owner %d, err %v, console asked %d times", owner, err, asked)
+	}
+}
+
+func TestServiceWaitsForDesktopUser(t *testing.T) {
+	for _, tc := range []struct {
+		name string
+		uid  int
+		err  error
+	}{{"login window", 0, nil}, {"system account", 200, nil}, {"lookup failed", 0, os.ErrPermission}} {
+		t.Run(tc.name, func(t *testing.T) {
+			dir := t.TempDir()
+			if _, err := bindOwner(dir, uint32(os.Geteuid()), func() (int, error) { return tc.uid, tc.err }); err == nil {
+				t.Fatal("service bound a non-desktop owner")
+			}
+			if entries, _ := os.ReadDir(dir); len(entries) != 0 {
+				t.Fatal("refusal wrote state")
+			}
+		})
+	}
+}
+
+func TestServiceRejectsUnsafeExistingPolicy(t *testing.T) {
+	dir := t.TempDir()
+	path := filepath.Join(dir, "installation.json")
+	if err := os.WriteFile(path, []byte(`{"version":1,"ownerUID":501}`), 0666); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.Chmod(path, 0666); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := bindOwner(dir, uint32(os.Geteuid()), func() (int, error) { return 501, nil }); err == nil {
+		t.Fatal("writable owner policy accepted")
+	}
+}
+
 func TestRestoreOnlyVerifiedOwnedDNS(t *testing.T) {
 	dir := t.TempDir()
 	if err := WriteResolvers(dir, "53", []string{"home.example.ts.net"}); err != nil {

@@ -6,8 +6,9 @@ candidate=0
 for arg in "$@"; do
     case "$arg" in
         --development-sign) signing_config=.cache/native-signing.json ;;
+        --developer-id-sign) signing_config=developer-id ;;
         --candidate) candidate=1 ;;
-        *) echo 'Usage: scripts/build-app.sh [--development-sign] [--candidate]' >&2; exit 2 ;;
+        *) echo 'Usage: scripts/build-app.sh [--development-sign | --developer-id-sign] [--candidate]' >&2; exit 2 ;;
     esac
 done
 root=$(CDPATH= cd -- "$(dirname "$0")/.." && pwd)
@@ -15,14 +16,21 @@ cd "$root"
 mkdir -p "$root/.cache/build-tmp"
 chmod 700 "$root/.cache/build-tmp"
 export TMPDIR="$root/.cache/build-tmp/"
-owner_uid=$(/usr/bin/id -u)
-[ "$owner_uid" -ge 501 ] || { echo 'Build for the desktop user, not root.' >&2; exit 1; }
+[ "$(/usr/bin/id -u)" -ne 0 ] || { echo 'Build as a regular user, not root.' >&2; exit 1; }
+if [ "$signing_config" = developer-id ]; then
+    # Release signing: the identity's SHA-1 comes from the environment, e.g. a CI keychain import.
+    printf '%s' "${TAILMULTI_DEVELOPER_ID:-}" | grep -Eq '^[0-9A-Fa-f]{40}$' ||
+        { echo 'Set TAILMULTI_DEVELOPER_ID to the Developer ID Application identity SHA-1.' >&2; exit 1; }
+    mkdir -p "$root/.cache"
+    signing_config="$root/.cache/developer-id-signing.json"
+    printf '{"identity": "%s", "signingMode": "developer-id"}\n' "$TAILMULTI_DEVELOPER_ID" > "$signing_config"
+fi
 if [ "$candidate" -eq 0 ] && [ -S '/Library/Application Support/Tailmulti/run/control.sock' ]; then
     echo 'Remove the background service in Tailmulti Settings before replacing its app bundle.' >&2
     exit 1
 fi
 mkdir -p build
-scripts/go.sh build -trimpath -ldflags "-X main.bundledOwnerUID=$owner_uid" -o ../build/tailmultid ./cmd/tailmultid
+scripts/go.sh build -trimpath -o ../build/tailmultid ./cmd/tailmultid
 scripts/swift.sh build -c release
 swiftbin=$(scripts/swift.sh build -c release --show-bin-path)
 stage_root=$(mktemp -d "$root/build/.app-stage.XXXXXX")
@@ -41,7 +49,7 @@ cp engine/UPSTREAM.json engine/ADAPTATIONS.md "$app/Contents/Resources/Licenses/
 scripts/go.sh list -deps -json ./cmd/tailmultid > build/packages.json
 cp "$(scripts/go.sh env GOROOT)/LICENSE" "$app/Contents/Resources/Licenses/Go-runtime.txt"
 python3 scripts/module-notices.py build/packages.json "$app/Contents/Resources/Licenses"
-python3 scripts/configure-service.py --app "$app" --owner-uid "$owner_uid" --signing-config "$signing_config"
+python3 scripts/configure-service.py --app "$app" --signing-config "$signing_config"
 /usr/bin/codesign --verify --deep --strict "$app"
 /usr/bin/plutil -lint "$app/Contents/Info.plist"
 python3 scripts/verify-app.py --app "$app"
