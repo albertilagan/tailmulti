@@ -87,7 +87,7 @@ The release job checks that `SPARKLE_ED_PRIVATE_KEY` matches `SUPublicEDKey`, si
 the notarized zip with `engine/tools/sparklesign`, and attaches
 `Tailmulti-<tag>-macOS.appcast.json` to the draft. Publishing, unpublishing or
 deleting a release runs the **Update feed** workflow, which rebuilds the appcast from
-published releases only and deploys it to GitHub Pages. A draft therefore never
+published releases only and deploys it to GitHub Pages from the default branch (Pages ignores deployments made from tags). A draft therefore never
 reaches users. Every release must raise `CFBundleVersion`; Sparkle compares it.
 
 The private key's only backup is the login keychain item "Tailmulti Sparkle EdDSA
