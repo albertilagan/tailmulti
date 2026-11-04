@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.5.2
+
+- **Add Account** works while Tailmulti is off: signing in turns it on first, in one step, instead of requiring the switch beforehand.
+
 ## 0.5.1
 
 - Setup offers **Reinstall Background Service** when macOS reports the service as allowed but it never answers, for example after an earlier copy of the app was deleted or moved.

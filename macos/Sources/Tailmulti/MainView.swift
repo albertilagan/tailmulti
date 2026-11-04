@@ -50,8 +50,8 @@ struct AccountsSplitView: View {
             .toolbar {
                 ToolbarItem {
                     Button { model.showingAdd = true } label: { Label("Add Account", systemImage: "plus") }
-                        .help(model.isNetworkingActive ? "Add account" : "Turn on Tailmulti to add an account")
-                        .disabled(model.busy || !model.isNetworkingActive)
+                        .help("Add account")
+                        .disabled(!model.canAddAccount)
                 }
             }
         } detail: {
@@ -131,9 +131,7 @@ struct WelcomeView: View {
             VStack(spacing: 6) {
                 Text("Add your first account")
                     .font(.title2.weight(.semibold))
-                Text(model.isNetworkingActive
-                     ? "Each Tailscale account signs in on its own and keeps its own devices. Add one for home and one for work."
-                     : "Turn on Tailmulti, then add an account for home and one for work. Each signs in on its own.")
+                Text("Each Tailscale account signs in on its own and keeps its own devices. Add one for home and one for work.")
                     .multilineTextAlignment(.center)
                     .foregroundStyle(.secondary)
                     .frame(maxWidth: 340)
@@ -144,7 +142,7 @@ struct WelcomeView: View {
             .buttonStyle(.borderedProminent)
             .controlSize(.large)
             .keyboardShortcut(.defaultAction)
-            .disabled(model.busy || !model.isNetworkingActive)
+            .disabled(!model.canAddAccount)
             if !model.labelOfferDismissed, !model.missingPreviewNames.isEmpty {
                 PreviewNamesNote(names: model.missingPreviewNames).frame(maxWidth: 460).padding(.top, 8)
             }
@@ -166,7 +164,9 @@ struct AddAccountSheet: View {
             TextField("Name", text: $name, prompt: Text("Home, Work..."))
                 .textFieldStyle(.roundedBorder)
                 .onSubmit(submit)
-            Text("The name is just a label for this Mac. Tailscale sign-in opens in your browser next.")
+            Text(model.isNetworkingActive
+                 ? "The name is just a label for this Mac. Tailscale sign-in opens in your browser next."
+                 : "The name is just a label for this Mac. Signing in turns Tailmulti on, then opens Tailscale sign-in in your browser. Internet traffic keeps its usual route.")
                 .font(.callout)
                 .foregroundStyle(.secondary)
                 .fixedSize(horizontal: false, vertical: true)
@@ -174,9 +174,9 @@ struct AddAccountSheet: View {
                 Spacer()
                 Button("Cancel", role: .cancel) { dismiss() }
                     .keyboardShortcut(.cancelAction)
-                Button("Sign In...", action: submit)
+                Button(model.isNetworkingActive ? "Sign In..." : "Turn On and Sign In...", action: submit)
                     .keyboardShortcut(.defaultAction)
-                    .disabled(trimmed.isEmpty || model.busy)
+                    .disabled(trimmed.isEmpty || !model.canAddAccount)
             }
         }
         .padding(20)
@@ -184,7 +184,7 @@ struct AddAccountSheet: View {
     }
 
     private func submit() {
-        guard !trimmed.isEmpty, !model.busy else { return }
+        guard !trimmed.isEmpty, model.canAddAccount else { return }
         model.addAndSignIn(trimmed)
         dismiss()
     }
