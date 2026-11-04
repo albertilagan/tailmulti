@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.5.1
+
+- Setup offers **Reinstall Background Service** when macOS reports the service as allowed but it never answers, for example after an earlier copy of the app was deleted or moved.
+
 ## 0.5.0
 
 - Downloadable app: releases include a Developer ID signed, notarized and stapled `Tailmulti-<version>-macOS.zip`.

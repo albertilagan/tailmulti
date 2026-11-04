@@ -82,8 +82,10 @@ struct SetupView: View {
                 .foregroundStyle(.secondary)
             Button("Open Login Items Settings") { model.openApprovalSettings() }
         case .serviceStarting:
-            Text("macOS lists the service as allowed, but it isn't answering yet. It may still be starting.")
+            Text("macOS lists the service as allowed, but it isn't answering yet. It may still be starting. If this doesn't change within a few seconds, reinstall it. An earlier copy of Tailmulti may have left an outdated registration.")
                 .foregroundStyle(.secondary)
+            Button("Reinstall Background Service") { model.reinstallBackgroundService() }
+                .disabled(model.busy)
         case .cannotRegister(let reason):
             if model.bundleCheck == nil {
                 Text("Checking this copy of Tailmulti...").foregroundStyle(.secondary)

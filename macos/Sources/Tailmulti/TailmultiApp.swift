@@ -193,9 +193,7 @@ final class EngineModel: ObservableObject {
         guard stage == .allowService else { return }
         let registrar = registrar
         perform {
-            let verified = await Task.detached { Self.verifyBundleSync() }.value
-            self.bundleCheck = verified
-            guard case .success(let service) = verified, service.signingMode.canRegister, service.team != nil else { return }
+            try await self.verifyForRegistration()
             try await Task.detached { try registrar.register() }.value
             if await Task.detached(operation: { registrar.status }).value == .requiresApproval {
                 registrar.openApprovalSettings()
@@ -204,6 +202,33 @@ final class EngineModel: ObservableObject {
     }
 
     func openApprovalSettings() { registrar.openApprovalSettings() }
+
+    /// Re-checks this bundle before registering; failures surface as an error instead of a silent no-op.
+    private func verifyForRegistration() async throws {
+        let verified = await Task.detached { Self.verifyBundleSync() }.value
+        bundleCheck = verified
+        switch verified {
+        case .failure(let error): throw error
+        case .success(let service) where !service.signingMode.canRegister || service.team == nil:
+            throw ControlError("This copy of Tailmulti isn't signed in a way macOS accepts for background services.")
+        case .success: break
+        }
+    }
+
+    /// Replaces a registration macOS reports as enabled whose service never answers, such as one left by a
+    /// deleted or moved copy of the app. Only called from the user's explicit action.
+    func reinstallBackgroundService() {
+        guard stage == .serviceStarting else { return }
+        let registrar = registrar
+        perform {
+            try await self.verifyForRegistration()
+            try await registrar.unregister()
+            try await Task.detached { try registrar.register() }.value
+            if await Task.detached(operation: { registrar.status }).value == .requiresApproval {
+                registrar.openApprovalSettings()
+            }
+        }
+    }
 
     /// Removal is offered only while networking is off. A running service first restores its owned
     /// DNS entries; if that fails, the service stays registered.
