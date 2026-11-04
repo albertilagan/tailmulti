@@ -3,7 +3,8 @@ name: Update feed
 # Rebuilds the Sparkle appcast from published releases only. Drafts never reach the feed.
 on:
   release:
-    types: [published, unpublished, deleted]
+    # edited covers replaced assets on a published release, whose signature and length change.
+    types: [published, unpublished, deleted, edited]
   workflow_dispatch:
 
 permissions:

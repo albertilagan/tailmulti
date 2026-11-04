@@ -50,7 +50,9 @@ private struct GeneralSettings: View {
             }
             Section("Privacy") {
                 Text("Sign-in keys stay inside the background service. This app never reads them.")
-                Text("Remote logging is off. Update checks fetch only Tailmulti's signed release feed.")
+                Text(updater.isAvailable
+                     ? "Remote logging is off. Update checks fetch only Tailmulti's signed release feed."
+                     : "Remote logging is off. This build doesn't check for updates.")
                 Text("Quitting the app leaves Tailmulti on or off as it is.")
             }
             .foregroundStyle(.secondary)

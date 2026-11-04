@@ -58,6 +58,18 @@ class AppcastTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             build_feed([{"item": foreign, "publishedAt": "2026-11-04T03:00:00Z", "htmlUrl": ""}], REPO)
 
+    def test_feed_command_reports_malformed_input_without_a_traceback(self):
+        import subprocess
+        releases = self.root / "releases.json"
+        for bad in ('[{"item": null, "publishedAt": "x", "htmlUrl": ""}]', '[{"item": {"version": "x"}}]', '{"not": "a list"}'):
+            releases.write_text(bad)
+            result = subprocess.run([sys.executable, str(Path(__file__).resolve().parents[1] / "appcast.py"), "feed",
+                                     "--releases", str(releases), "--repo", REPO, "--out", str(self.root / "out.xml")],
+                                    capture_output=True, text=True)
+            self.assertNotEqual(result.returncode, 0)
+            self.assertIn("appcast:", result.stderr)
+            self.assertNotIn("Traceback", result.stderr)
+
 
 if __name__ == "__main__":
     unittest.main()

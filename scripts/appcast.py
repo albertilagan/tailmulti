@@ -92,7 +92,7 @@ def main() -> None:
             args.out.write_text(json.dumps(data, indent=2) + "\n")
         else:
             args.out.write_bytes(build_feed(json.loads(args.releases.read_text()), args.repo))
-    except (ValueError, KeyError) as error:
+    except (ValueError, KeyError, TypeError, AttributeError) as error:
         sys.exit(f"appcast: {error}")
 
 
