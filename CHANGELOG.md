@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.6.1
+
+- App icon: two accounts' networks as blue and teal groups in one dot grid, replacing the blank placeholder. It is drawn by `scripts/make-icon.swift` during the build.
+- The update feed rebuilds from the default branch when a release is published or edited.
+
 ## 0.6.0
 
 - **Automatic updates** with Sparkle: **Check for Updates…** in the app menu, menu bar menu and Settings, plus a daily check that can be turned off. Updates must be signed with Tailmulti's update key and notarized.

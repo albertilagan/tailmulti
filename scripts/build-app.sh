@@ -50,6 +50,9 @@ done
 /usr/bin/install_name_tool -add_rpath @executable_path/../Frameworks "$app/Contents/MacOS/Tailmulti"
 cp build/tailmultid "$app/Contents/Library/HelperTools/tailmultid"
 cp macos/Resources/Info.plist "$app/Contents/Info.plist"
+# The icon is drawn by a script at build time, so the repository holds no binary artwork.
+/usr/bin/xcrun swift scripts/make-icon.swift "$stage_root/AppIcon.iconset"
+/usr/bin/iconutil -c icns "$stage_root/AppIcon.iconset" -o "$app/Contents/Resources/AppIcon.icns"
 cp LICENSE "$app/Contents/Resources/Licenses/Tailmulti.txt"
 cp NOTICE "$app/Contents/Resources/Licenses/NOTICE.txt"
 cp engine/LICENSE "$app/Contents/Resources/Licenses/Tailmix.txt"
