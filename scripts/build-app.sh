@@ -50,6 +50,12 @@ done
 /usr/bin/install_name_tool -add_rpath @executable_path/../Frameworks "$app/Contents/MacOS/Tailmulti"
 cp build/tailmultid "$app/Contents/Library/HelperTools/tailmultid"
 cp macos/Resources/Info.plist "$app/Contents/Info.plist"
+# Compile the Icon Composer source (SVG layers) into the Liquid Glass asset catalog and a fallback .icns,
+# so the repository holds no binary artwork.
+/usr/bin/xcrun actool --compile "$app/Contents/Resources" --platform macosx --minimum-deployment-target 26.0 \
+    --app-icon AppIcon --output-partial-info-plist "$stage_root/icon-info.plist" \
+    --output-format human-readable-text --errors --warnings macos/Resources/AppIcon.icon > "$stage_root/actool.log"
+if grep -qiE "error|warning" "$stage_root/actool.log"; then cat "$stage_root/actool.log" >&2; exit 1; fi
 cp LICENSE "$app/Contents/Resources/Licenses/Tailmulti.txt"
 cp NOTICE "$app/Contents/Resources/Licenses/NOTICE.txt"
 cp engine/LICENSE "$app/Contents/Resources/Licenses/Tailmix.txt"

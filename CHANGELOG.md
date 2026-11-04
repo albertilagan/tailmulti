@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.6.1
+
+- Liquid Glass app icon: two accounts' networks as blue and teal groups in one dot grid, replacing the blank placeholder. The Icon Composer source (`macos/Resources/AppIcon.icon`, SVG layers) is compiled with `actool` during the build.
+- Menu bar icon: the same dot grid in monochrome, with both corner groups solid while connected and all dots faint while off. The warning triangle still marks problems.
+- The update feed rebuilds from the default branch when a release is published or edited.
+
 ## 0.6.0
 
 - **Automatic updates** with Sparkle: **Check for Updates…** in the app menu, menu bar menu and Settings, plus a daily check that can be turned off. Updates must be signed with Tailmulti's update key and notarized.

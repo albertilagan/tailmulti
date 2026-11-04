@@ -34,6 +34,8 @@ assert all(key not in launch for key in ("Program", "UserName", "Sockets", "Envi
 info = plistlib.loads((app / "Contents/Info.plist").read_bytes())
 expected_info = plistlib.loads((ROOT / "macos/Resources/Info.plist").read_bytes())
 assert info["CFBundleIdentifier"] == "dev.tailmulti.app"
+assert info["CFBundleIconFile"] == info["CFBundleIconName"] == "AppIcon", "App icon keys are missing"
+assert (resources / "AppIcon.icns").is_file() and (resources / "Assets.car").is_file(), "Compiled app icon is missing"
 for key in ("CFBundleVersion", "CFBundleShortVersionString"):
     assert info[key] == expected_info[key], "Bundle version does not match the source"
 build_metadata = subprocess.check_output([
