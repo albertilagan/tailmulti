@@ -124,17 +124,15 @@ final class EngineModel: ObservableObject {
         guard let client = accountClient else { return }
         perform(account: account.id, onError: onError) { try await self.prepareSignIn(account.id, client: client) }
     }
-    /// Adding an account needs a running engine, so while Tailmulti is off this turns it on first.
-    func addAndSignIn(_ name: String) {
-        if isNetworkingActive { addAndSignInWhileOn(name); return }
-        guard networkSwitchEnabled else { return }
-        Task {
-            await switchNetworking(true)
-            // A failed start leaves its reason in networkError, shown with the switch.
-            if isNetworkingActive { addAndSignInWhileOn(name) }
-        }
+    /// Adding an account needs a running engine, so Add Account turns Tailmulti on first when it is off.
+    /// Returns whether networking is on; a failure's reason is in `networkError`.
+    func turnOnForSignIn() async -> Bool {
+        if isNetworkingActive { return true }
+        guard networkSwitchEnabled else { return false }
+        await switchNetworking(true)
+        return isNetworkingActive
     }
-    private func addAndSignInWhileOn(_ name: String) {
+    func addAndSignIn(_ name: String) {
         guard let client = accountClient else { return }
         perform {
             let created = try await client.add(name)

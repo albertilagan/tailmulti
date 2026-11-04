@@ -156,6 +156,8 @@ struct AddAccountSheet: View {
     @EnvironmentObject var model: EngineModel
     @Environment(\.dismiss) private var dismiss
     @State private var name = ""
+    @State private var turningOn = false
+    @State private var failure: String?
     private var trimmed: String { name.trimmingCharacters(in: .whitespacesAndNewlines) }
 
     var body: some View {
@@ -170,23 +172,45 @@ struct AddAccountSheet: View {
                 .font(.callout)
                 .foregroundStyle(.secondary)
                 .fixedSize(horizontal: false, vertical: true)
+            if let failure {
+                Label(failure, systemImage: "exclamationmark.triangle.fill")
+                    .font(.callout)
+                    .foregroundStyle(.orange)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
             HStack {
+                if turningOn {
+                    ProgressView().controlSize(.small)
+                    Text("Turning on...").font(.callout).foregroundStyle(.secondary)
+                }
                 Spacer()
                 Button("Cancel", role: .cancel) { dismiss() }
                     .keyboardShortcut(.cancelAction)
                 Button(model.isNetworkingActive ? "Sign In..." : "Turn On and Sign In...", action: submit)
                     .keyboardShortcut(.defaultAction)
-                    .disabled(trimmed.isEmpty || !model.canAddAccount)
+                    .disabled(trimmed.isEmpty || turningOn || !model.canAddAccount)
             }
         }
         .padding(20)
         .frame(width: 360)
     }
 
+    /// The sheet stays open, keeping the typed name, until Tailmulti is on and sign-in starts.
     private func submit() {
-        guard !trimmed.isEmpty, model.canAddAccount else { return }
-        model.addAndSignIn(trimmed)
-        dismiss()
+        guard !trimmed.isEmpty, !turningOn, model.canAddAccount else { return }
+        let account = trimmed
+        failure = nil
+        turningOn = true
+        Task {
+            let on = await model.turnOnForSignIn()
+            turningOn = false
+            guard on else {
+                failure = model.networkError ?? "Tailmulti couldn't turn on. Try again."
+                return
+            }
+            model.addAndSignIn(account)
+            dismiss()
+        }
     }
 }
 
