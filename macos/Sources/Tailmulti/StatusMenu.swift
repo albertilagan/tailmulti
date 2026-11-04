@@ -82,11 +82,32 @@ final class StatusMenuController: NSObject, NSMenuDelegate {
 
     private func updateButton() {
         guard let button = statusItem.button else { return }
-        let symbol = model.needsAttention ? "exclamationmark.triangle" : model.connected > 0 ? "network" : "network.slash"
-        let image = NSImage(systemSymbolName: symbol, accessibilityDescription: "Tailmulti, \(model.connected) connected")
+        let description = "Tailmulti, \(model.connected) connected"
+        let image = model.needsAttention
+            ? NSImage(systemSymbolName: "exclamationmark.triangle", accessibilityDescription: description)
+            : Self.dotGrid(connected: model.connected > 0, description: description)
         image?.isTemplate = true
         button.image = image
         button.toolTip = "Tailmulti: \(model.networkSummary)"
+    }
+
+    /// The app icon's 4x4 dot grid as a monochrome template: both corner groups solid while connected,
+    /// every dot faint while off.
+    static func dotGrid(connected: Bool, description: String) -> NSImage {
+        let image = NSImage(size: NSSize(width: 18, height: 18), flipped: true) { _ in
+            let pitch: CGFloat = 4.4, radius: CGFloat = 1.5, start = 9 - 1.5 * pitch
+            for row in 0..<4 {
+                for column in 0..<4 {
+                    let lit = connected && ((row < 2 && column < 2) || (row >= 2 && column >= 2))
+                    NSColor.black.withAlphaComponent(lit ? 1 : 0.35).setFill()
+                    let center = NSPoint(x: start + CGFloat(column) * pitch, y: start + CGFloat(row) * pitch)
+                    NSBezierPath(ovalIn: NSRect(x: center.x - radius, y: center.y - radius, width: 2 * radius, height: 2 * radius)).fill()
+                }
+            }
+            return true
+        }
+        image.accessibilityDescription = description
+        return image
     }
 
     /// Items are rebuilt only when this changes, so an open submenu isn't torn down by status polls.
