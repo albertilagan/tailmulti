@@ -26,6 +26,13 @@ type Backend interface {
 }
 type uidKey struct{}
 
+// ServiceBackend is the installed service's own lifecycle, used to move it to an updated binary.
+type ServiceBackend interface {
+	Build() string
+	// Restart exits after the reply is sent; launchd starts the bundled, possibly updated, executable.
+	Restart()
+}
+
 type NetworkBackend interface {
 	Setup(context.Context) setup.Report
 	StartNetwork(context.Context) error
@@ -85,6 +92,29 @@ func Handler(b Backend, owner string) http.Handler {
 			return
 		}
 		reply(w, 409, map[string]string{"error": "network setup requires the installed service"})
+	})
+	mux.HandleFunc("GET /v1/service", func(w http.ResponseWriter, r *http.Request) {
+		if svc, ok := b.(ServiceBackend); ok {
+			reply(w, 200, map[string]string{"build": svc.Build()})
+			return
+		}
+		reply(w, 409, map[string]string{"error": "requires the installed service"})
+	})
+	mux.HandleFunc("POST /v1/service/restart", func(w http.ResponseWriter, r *http.Request) {
+		var body struct{}
+		if !decode(w, r, &body) {
+			return
+		}
+		svc, ok := b.(ServiceBackend)
+		if !ok {
+			reply(w, 409, map[string]string{"error": "requires the installed service"})
+			return
+		}
+		reply(w, 200, map[string]bool{"ok": true})
+		if f, ok := w.(http.Flusher); ok {
+			f.Flush()
+		}
+		go svc.Restart()
 	})
 	mux.HandleFunc("GET /v1/diagnostics", func(w http.ResponseWriter, r *http.Request) {
 		s := b.Status()

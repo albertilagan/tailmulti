@@ -30,7 +30,8 @@ if [ "$candidate" -eq 0 ] && [ -S '/Library/Application Support/Tailmulti/run/co
     exit 1
 fi
 mkdir -p build
-scripts/go.sh build -trimpath -o ../build/tailmultid ./cmd/tailmultid
+build_number=$(/usr/bin/plutil -extract CFBundleVersion raw macos/Resources/Info.plist)
+scripts/go.sh build -trimpath -ldflags "-X main.serviceBuild=$build_number" -o ../build/tailmultid ./cmd/tailmultid
 scripts/swift.sh build -c release
 swiftbin=$(scripts/swift.sh build -c release --show-bin-path)
 stage_root=$(mktemp -d "$root/build/.app-stage.XXXXXX")
@@ -38,6 +39,15 @@ app="$stage_root/Tailmulti.app"
 trap 'rm -rf "$stage_root"' EXIT HUP INT TERM
 mkdir -p "$app/Contents/MacOS" "$app/Contents/Library/HelperTools" "$app/Contents/Resources/Licenses"
 cp "$swiftbin/Tailmulti" "$app/Contents/MacOS/Tailmulti"
+# Sparkle lives in Contents/Frameworks. Its XPC services only serve sandboxed apps, so they are dropped.
+mkdir -p "$app/Contents/Frameworks"
+/usr/bin/ditto "$swiftbin/Sparkle.framework" "$app/Contents/Frameworks/Sparkle.framework"
+rm -rf "$app/Contents/Frameworks/Sparkle.framework/XPCServices" "$app/Contents/Frameworks/Sparkle.framework/Versions/B/XPCServices"
+# SwiftPM records build-directory rpaths; ship only the bundle-relative one.
+for rpath in $(/usr/bin/otool -l "$app/Contents/MacOS/Tailmulti" | awk '$1 == "cmd" && $2 == "LC_RPATH" { getline; getline; print $2 }'); do
+    /usr/bin/install_name_tool -delete_rpath "$rpath" "$app/Contents/MacOS/Tailmulti"
+done
+/usr/bin/install_name_tool -add_rpath @executable_path/../Frameworks "$app/Contents/MacOS/Tailmulti"
 cp build/tailmultid "$app/Contents/Library/HelperTools/tailmultid"
 cp macos/Resources/Info.plist "$app/Contents/Info.plist"
 cp LICENSE "$app/Contents/Resources/Licenses/Tailmulti.txt"
@@ -46,6 +56,7 @@ cp engine/LICENSE "$app/Contents/Resources/Licenses/Tailmix.txt"
 cp engine/tsnet/LICENSE "$app/Contents/Resources/Licenses/Tailscale-tsnet.txt"
 cp engine/netns/LICENSE "$app/Contents/Resources/Licenses/Tailscale-netns.txt"
 cp engine/UPSTREAM.json engine/ADAPTATIONS.md "$app/Contents/Resources/Licenses/"
+cp .cache/swift-build/checkouts/Sparkle/LICENSE "$app/Contents/Resources/Licenses/Sparkle.txt"
 scripts/go.sh list -deps -json ./cmd/tailmultid > build/packages.json
 cp "$(scripts/go.sh env GOROOT)/LICENSE" "$app/Contents/Resources/Licenses/Go-runtime.txt"
 python3 scripts/module-notices.py build/packages.json "$app/Contents/Resources/Licenses"

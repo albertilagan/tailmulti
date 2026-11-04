@@ -75,15 +75,26 @@ Keep the approved app in place. Move it to your preferred location, usually
 Applications, before allowing the background service, and do not replace or move a registered bundle. Relocation
 and boot-before-login behavior still need live acceptance testing.
 
-## Update or remove
+## Updates
 
-To update, download or build the new version first. In the old app, turn Tailmulti
-off, then open Settings → General → Advanced → Recovery and remove the background
-service. Quit the old app, open the new one, and allow its service. Both
-accounts are temporarily disconnected during this change. Account data stays saved.
+From 0.6.0, release builds update themselves with [Sparkle](https://sparkle-project.org).
+They check daily for a newer published release, and **Check for Updates…** is in the
+app menu, the menu bar menu and Settings. Updates are verified with Tailmulti's update
+signing key and Apple's notarization before they are installed. After an update the
+app restarts the background service into the new version and turns Tailmulti back on
+if it was on, which briefly disconnects every account. Settings → General can turn off
+automatic checks.
 
-To remove the app, follow the same off/remove-service steps before deleting its
-bundle. Account credentials remain in the root-private Tailmulti state directory.
+Updating to 0.6.0 from an earlier version is manual: replace the app, then restart the
+Mac, or remove and allow the background service in Settings → General → Advanced →
+Recovery, so the service runs the new version.
+
+Builds made from source never update themselves.
+
+## Remove
+
+To remove the app, turn Tailmulti off, then open Settings → General → Advanced →
+Recovery and remove the background service before deleting its bundle. Account credentials remain in the root-private Tailmulti state directory.
 There is no built-in credential-erasure or automatic downgrade flow yet. Do not
 delete or restore lease/state files manually; cached addresses must not be reused
 for a different identity. See [recovery details](ACTIVATION.md).

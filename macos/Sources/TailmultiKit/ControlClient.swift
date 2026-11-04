@@ -87,6 +87,15 @@ public struct ControlClient: Sendable {
         let body = try JSONSerialization.data(withJSONObject: ["restoreDNS": restoreDNS])
         _ = try await request("POST", "/v1/network/stop", body: body)
     }
+    /// The running service's build number (the app's CFBundleVersion it was bundled with).
+    public func serviceBuild() async throws -> String {
+        struct Reply: Decodable { let build: String }
+        return try JSONDecoder().decode(Reply.self, from: try await request("GET", "/v1/service")).build
+    }
+    /// Asks the service to exit so launchd starts the bundled executable again, for example after an update.
+    public func restartService() async throws {
+        _ = try await request("POST", "/v1/service/restart", body: Data("{}".utf8))
+    }
     public func diagnostics() async throws -> String {
         let data = try await request("GET", "/v1/diagnostics")
         let object = try JSONSerialization.jsonObject(with: data)

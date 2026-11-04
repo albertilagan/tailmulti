@@ -15,6 +15,7 @@ struct SettingsView: View {
 
 private struct GeneralSettings: View {
     @EnvironmentObject var model: EngineModel
+    @EnvironmentObject var updater: AppUpdater
     @State private var confirmingRemoval = false
 
     var body: some View {
@@ -38,9 +39,20 @@ private struct GeneralSettings: View {
                         .foregroundStyle(.secondary)
                 }
             }
+            if updater.isAvailable {
+                Section("Updates") {
+                    Toggle("Check for updates automatically", isOn: Binding(
+                        get: { updater.automaticallyChecks }, set: { updater.automaticallyChecks = $0 }))
+                    LabeledContent("Version \(Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "")") {
+                        Button("Check for Updates...") { updater.checkForUpdates() }.disabled(!updater.canCheck)
+                    }
+                }
+            }
             Section("Privacy") {
                 Text("Sign-in keys stay inside the background service. This app never reads them.")
-                Text("Remote logging and automatic updates are off.")
+                Text(updater.isAvailable
+                     ? "Remote logging is off. Update checks fetch only Tailmulti's signed release feed."
+                     : "Remote logging is off. This build doesn't check for updates.")
                 Text("Quitting the app leaves Tailmulti on or off as it is.")
             }
             .foregroundStyle(.secondary)

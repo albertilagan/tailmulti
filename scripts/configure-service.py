@@ -37,6 +37,12 @@ def configure(app: Path, signing_config: str) -> None:
               "ProcessType": "Background", "Umask": 0o077}
     (launch_dir / (LABEL + ".plist")).write_bytes(plistlib.dumps(launch))
     helper = app / HELPER
+    # Nested code is signed inside-out before the app; Sparkle's components keep their own identifiers.
+    sparkle = app / "Contents/Frameworks/Sparkle.framework"
+    if sparkle.exists():
+        for part in (sparkle / "Versions/B/Autoupdate", sparkle / "Versions/B/Updater.app", sparkle):
+            subprocess.run(["/usr/bin/codesign", "--force", "--sign", identity, "--options", "runtime",
+                            timestamp, str(part)], check=True, timeout=120)
     for path, identifier in ((helper, LABEL), (app, APP_ID)):
         if path == app:
             team = signature_team(helper) if mode != "adhoc" else ""

@@ -61,6 +61,7 @@ deployments limited to `v*` tags. Add these environment secrets:
 | `AC_API_KEY_P8` | Contents of an App Store Connect API key `.p8` file, used by `notarytool` |
 | `AC_API_KEY_ID` | That key's ID |
 | `AC_API_ISSUER_ID` | The key's issuer ID |
+| `SPARKLE_ED_PRIVATE_KEY` | Base64 Ed25519 seed that signs updates; its public half is `SUPublicEDKey` in Info.plist |
 
 The workflow requires the certificate's team to be `ZR86C4659Z`; change
 `TAILMULTI_TEAM_ID` in `release.yml` if the signing team changes.
@@ -75,5 +76,25 @@ when these values are provided as `TAILMULTI_DEVELOPER_ID`, `TAILMULTI_TEAM_ID` 
 - Verify minimum OS support, relocation, reboot, removal, credential erasure and update recovery.
 - Retain all license/notice files. Document any new dependency's redistribution requirements before bundling it.
 
-No self-updater is implemented. Tailmix's release scripts remain immutable
-reference material and must never run as Tailmulti's release process.
+## Updates
+
+Release builds include Sparkle 2, pinned exactly in `macos/Package.swift`. The app
+reads `SUFeedURL`, `https://albertilagan.github.io/tailmulti/appcast.xml`, and accepts
+only updates signed with the key whose public half is `SUPublicEDKey`. Development
+and ad-hoc builds disable the updater.
+
+The release job checks that `SPARKLE_ED_PRIVATE_KEY` matches `SUPublicEDKey`, signs
+the notarized zip with `engine/tools/sparklesign`, and attaches
+`Tailmulti-<tag>-macOS.appcast.json` to the draft. Publishing, unpublishing or
+deleting a release runs the **Update feed** workflow, which rebuilds the appcast from
+published releases only and deploys it to GitHub Pages. A draft therefore never
+reaches users. Every release must raise `CFBundleVersion`; Sparkle compares it.
+
+The private key's only backup is the login keychain item "Tailmulti Sparkle EdDSA
+key" on the maintainer's Mac. Losing it means existing installs can no longer update
+automatically. Generate a replacement with `scripts/go.sh run ./tools/sparklesign
+-generate` only as a deliberate key rotation, shipped in a release signed with the
+old key.
+
+Tailmix's release scripts remain immutable reference material and must never run as
+Tailmulti's release process.
