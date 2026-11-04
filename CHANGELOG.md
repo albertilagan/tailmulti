@@ -2,7 +2,7 @@
 
 ## 0.6.1
 
-- App icon: two accounts' networks as blue and teal groups in one dot grid, replacing the blank placeholder. It is drawn by `scripts/make-icon.swift` during the build.
+- Liquid Glass app icon: two accounts' networks as blue and teal groups in one dot grid, replacing the blank placeholder. The Icon Composer source (`macos/Resources/AppIcon.icon`, SVG layers) is compiled with `actool` during the build.
 - Menu bar icon: the same dot grid in monochrome, with both corner groups solid while connected and all dots faint while off. The warning triangle still marks problems.
 - The update feed rebuilds from the default branch when a release is published or edited.
 
