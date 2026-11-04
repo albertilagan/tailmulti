@@ -124,6 +124,14 @@ final class EngineModel: ObservableObject {
         guard let client = accountClient else { return }
         perform(account: account.id, onError: onError) { try await self.prepareSignIn(account.id, client: client) }
     }
+    /// Adding an account needs a running engine, so Add Account turns Tailmulti on first when it is off.
+    /// Returns whether networking is on; a failure's reason is in `networkError`.
+    func turnOnForSignIn() async -> Bool {
+        if isNetworkingActive { return true }
+        guard networkSwitchEnabled else { return false }
+        await switchNetworking(true)
+        return isNetworkingActive
+    }
     func addAndSignIn(_ name: String) {
         guard let client = accountClient else { return }
         perform {
@@ -246,24 +254,27 @@ final class EngineModel: ObservableObject {
 
     func setNetworkingEnabled(_ enabled: Bool) {
         guard networkSwitchEnabled, enabled != isNetworkingActive || networkError != nil else { return }
+        Task { await switchNetworking(enabled) }
+    }
+
+    private func switchNetworking(_ enabled: Bool) async {
+        guard networkSwitchEnabled else { return }
         lastNetworkIntent = enabled
         busy = true
         networkTransition = true
         refreshGeneration += 1
         let current = status
-        Task {
-            if let observed = await networkControl.setEnabled(enabled, current: current) {
-                status = observed
-                source = .service
-                stage = SetupStage.resolve(probe: .running(observed), registration: registration,
-                                           bundle: bundleCheck ?? .failure(ControlError("Checking this copy of Tailmulti...")))
-            }
-            setupReport = nil
-            networkTransition = false
-            busy = false
-            refreshGeneration += 1
-            await refresh()
+        if let observed = await networkControl.setEnabled(enabled, current: current) {
+            status = observed
+            source = .service
+            stage = SetupStage.resolve(probe: .running(observed), registration: registration,
+                                       bundle: bundleCheck ?? .failure(ControlError("Checking this copy of Tailmulti...")))
         }
+        setupReport = nil
+        networkTransition = false
+        busy = false
+        refreshGeneration += 1
+        await refresh()
     }
 
     func retryNetworking() {
@@ -295,6 +306,8 @@ final class EngineModel: ObservableObject {
     var canShowAccounts: Bool { source == .service && (stage == .networkingActive || stage == .enableNetworking) }
     var networkSwitchIsOn: Bool { networkTransition ? lastNetworkIntent ?? isNetworkingActive : isNetworkingActive }
     var networkSwitchEnabled: Bool { loaded && canShowAccounts && !busy && !networkTransition }
+    /// Add Account stays available while off; signing in turns Tailmulti on.
+    var canAddAccount: Bool { networkSwitchEnabled }
     var networkError: String? { networkControl.error }
     var networkSummary: String {
         if networkTransition { return lastNetworkIntent == false ? "Disconnecting..." : "Connecting..." }
@@ -378,6 +391,6 @@ private struct AddAccountCommand: View {
     var body: some View {
         Button("Add Account...") { model.showingAdd = true }
             .keyboardShortcut("n")
-            .disabled(!model.isNetworkingActive || model.busy)
+            .disabled(!model.canAddAccount)
     }
 }

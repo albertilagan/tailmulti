@@ -114,7 +114,7 @@ final class StatusMenuController: NSObject, NSMenuDelegate {
                 entry.updateRootItem(account)
                 menu.addItem(entry.rootItem)
             }
-            addItem.isEnabled = model.isNetworkingActive && !model.busy
+            addItem.isEnabled = model.canAddAccount
             menu.addItem(addItem)
             menu.addItem(.separator())
         } else {
@@ -136,7 +136,7 @@ final class StatusMenuController: NSObject, NSMenuDelegate {
     private func updateRoot() {
         updateHeader()
         retryItem.isEnabled = retryEnabled
-        addItem.isEnabled = model.isNetworkingActive && !model.busy
+        addItem.isEnabled = model.canAddAccount
         for account in model.accounts { accountMenus[account.id]?.updateRootItem(account) }
     }
 
