@@ -40,5 +40,6 @@ results. The full simultaneous Safari/SSH test and per-account disconnect
 isolation test remain outstanding, as do sleep/wake, network changes, crash and
 reboot recovery. A passing build is not evidence of those behaviors.
 
-No updater, remote release download, or Tailmix installation code is part of
+Release builds update through Sparkle from Tailmulti's own signed GitHub Pages
+feed; see docs/RELEASING.md. No Tailmix installation or update code is part of
 Tailmulti. No publication is implied by preparing the workflow.

@@ -37,6 +37,9 @@ final class EngineModel: ObservableObject {
     private var refreshGeneration = 0
     private var lastNetworkIntent: Bool?
     @Published private(set) var networkTransition = false
+    /// True while an outdated background service restarts into this app's bundled version.
+    @Published private(set) var updatingService = false
+    private var serviceBuildChecked = false
     private let networkControl = NetworkSwitch(client: ControlClient())
     private var networkChanges: AnyCancellable?
     let serviceClient = ControlClient()
@@ -97,6 +100,36 @@ final class EngineModel: ObservableObject {
         if let selection, !accounts.contains(where: { $0.id == selection }) { self.selection = nil }
         if selection == nil, canShowAccounts { selection = accounts.first?.id }
         if setupReport == nil, setupError == nil, !checking, stage.checkSource != nil { runChecks() }
+        if !serviceBuildChecked, canShowAccounts, !busy, !networkTransition { Task { await updateServiceIfOutdated() } }
+    }
+
+    /// After the app updates, the running root service is still the previous version. Restart it once so
+    /// launchd starts the updated executable, then turn networking back on if it was on.
+    private func updateServiceIfOutdated() async {
+        guard !serviceBuildChecked else { return }
+        serviceBuildChecked = true
+        guard let bundled = Bundle.main.object(forInfoDictionaryKey: "CFBundleVersion") as? String,
+              let bundledNumber = Int(bundled),
+              let running = try? await serviceClient.serviceBuild(),
+              let runningNumber = Int(running), runningNumber < bundledNumber else { return }
+        let wasOn = isNetworkingActive
+        updatingService = true
+        busy = true
+        do {
+            try await serviceClient.restartService()
+            var updated = false
+            for _ in 0..<45 where !updated {
+                try? await Task.sleep(for: .seconds(1))
+                updated = (try? await serviceClient.serviceBuild()) == bundled
+            }
+            if !updated { actionError = "The background service didn't restart into the updated version. Restart your Mac to finish updating." }
+        } catch {
+            actionError = "The background service couldn't restart to finish updating: \(error.localizedDescription)"
+        }
+        updatingService = false
+        busy = false
+        await refresh()
+        if wasOn { setNetworkingEnabled(true) }
     }
 
     func perform(account: String? = nil, onError: ((String) -> Void)? = nil,
@@ -310,6 +343,7 @@ final class EngineModel: ObservableObject {
     var canAddAccount: Bool { networkSwitchEnabled }
     var networkError: String? { networkControl.error }
     var networkSummary: String {
+        if updatingService { return "Finishing update..." }
         if networkTransition { return lastNetworkIntent == false ? "Disconnecting..." : "Connecting..." }
         switch stage {
         case .allowService, .cannotRegister: return "Setup needed"
@@ -351,10 +385,11 @@ final class EngineModel: ObservableObject {
 @MainActor
 final class AppDelegate: NSObject, NSApplicationDelegate {
     let model = EngineModel()
+    let updater = AppUpdater()
     private var statusMenu: StatusMenuController?
 
     func applicationDidFinishLaunching(_ notification: Notification) {
-        statusMenu = StatusMenuController(model: model)
+        statusMenu = StatusMenuController(model: model, updater: updater)
     }
 
     /// The status menu is the everyday interface, so closing the last window keeps the app running.
@@ -375,11 +410,13 @@ struct TailmultiApp: App {
         .defaultSize(width: 820, height: 540)
         .commands {
             CommandGroup(replacing: .newItem) { AddAccountCommand(model: delegate.model) }
+            CommandGroup(after: .appInfo) { CheckForUpdatesCommand(updater: delegate.updater) }
         }
 
         Settings {
             SettingsView()
                 .environmentObject(delegate.model)
+                .environmentObject(delegate.updater)
                 .registersSceneActions()
         }
     }

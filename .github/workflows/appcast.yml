@@ -1,0 +1,58 @@
+name: Update feed
+
+# Rebuilds the Sparkle appcast from published releases only. Drafts never reach the feed.
+on:
+  release:
+    types: [published, unpublished, deleted]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  feed:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deploy.outputs.page_url }}
+    env:
+      PYTHONDONTWRITEBYTECODE: "1"
+      GH_TOKEN: ${{ github.token }}
+      GH_REPO: ${{ github.repository }}
+    steps:
+      - uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
+        with:
+          persist-credentials: false
+      - name: Collect published update items
+        run: |
+          mkdir -p items site
+          gh api "repos/$GH_REPO/releases" --paginate \
+            --jq '.[] | select(.draft == false) | {tag: .tag_name, publishedAt: .published_at, htmlUrl: .html_url, asset: ([.assets[].name | select(endswith("-macOS.appcast.json"))][0])} | select(.asset != null)' \
+            > items/releases.jsonl
+          python3 - <<'PY'
+          import json, pathlib, subprocess
+          releases = []
+          for line in pathlib.Path("items/releases.jsonl").read_text().splitlines():
+              release = json.loads(line)
+              target = pathlib.Path("items") / release["tag"]
+              subprocess.run(["gh", "release", "download", release["tag"], "--pattern", release["asset"], "--dir", str(target)], check=True)
+              item = json.loads((target / release["asset"]).read_text())
+              releases.append({"item": item, "publishedAt": release["publishedAt"], "htmlUrl": release["htmlUrl"]})
+          pathlib.Path("items/releases.json").write_text(json.dumps(releases))
+          PY
+          python3 scripts/appcast.py feed --releases items/releases.json --repo "$GH_REPO" --out site/appcast.xml
+          cat site/appcast.xml
+      - uses: actions/upload-pages-artifact@fc324d3547104276b827a68afc52ff2a11cc49c9 # v5.0.0
+        with:
+          path: site
+      - id: deploy
+        uses: actions/deploy-pages@368f82528645a54fb793d4d04e342629a3f51346 # v5.0.1

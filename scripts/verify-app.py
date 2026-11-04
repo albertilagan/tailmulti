@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Inspect the native service bundle without registering or activating it."""
 import argparse
+import base64
 import hashlib
 import json
 from pathlib import Path
@@ -67,8 +68,20 @@ for target, identifier in ((app, "dev.tailmulti.app"), (helper, "dev.tailmulti.t
 if teams:
     assert len(set(teams)) == 1 and teams[0] == manifest["signingTeam"]
 metadata = json.loads(subprocess.check_output([str(helper), "--build-info"], text=True, timeout=10))
-assert metadata == {"version": 2, "ownerBinding": "first-console-user"}
-for name in ("Tailmulti.txt", "NOTICE.txt", "Tailmix.txt", "Tailscale-tsnet.txt", "Tailscale-netns.txt", "Go-runtime.txt", "UPSTREAM.json", "ADAPTATIONS.md"):
+assert metadata == {"version": 2, "ownerBinding": "first-console-user", "build": info["CFBundleVersion"]}, "Service build does not match the app"
+# Sparkle: embedded once, no sandbox-only XPC services, and only a bundle-relative rpath.
+sparkle = app / "Contents/Frameworks/Sparkle.framework"
+assert (sparkle / "Versions/B/Sparkle").is_file() and (sparkle / "Versions/B/Autoupdate").is_file()
+assert not (sparkle / "Versions/B/XPCServices").exists() and not (sparkle / "XPCServices").exists()
+load_commands = subprocess.check_output(["/usr/bin/otool", "-l", str(app / "Contents/MacOS/Tailmulti")], text=True, timeout=10)
+assert re.findall(r"^\s+path (\S+) \(offset", load_commands, re.M) == ["@executable_path/../Frameworks"], "Unexpected rpath"
+assert info["SUFeedURL"].startswith("https://") and info["SUFeedURL"] == expected_info["SUFeedURL"]
+assert len(base64.b64decode(info["SUPublicEDKey"], validate=True)) == 32, "Update public key must be an Ed25519 key"
+if manifest["signingMode"] != "adhoc":
+    for part in (sparkle, sparkle / "Versions/B/Autoupdate", sparkle / "Versions/B/Updater.app"):
+        result = subprocess.run(["/usr/bin/codesign", "--display", "--verbose=4", str(part)], capture_output=True, text=True, check=True)
+        assert f"TeamIdentifier={manifest['signingTeam']}" in result.stderr and "flags=0x10000(runtime)" in result.stderr, f"{part.name} is not signed by the app's team with hardened runtime"
+for name in ("Tailmulti.txt", "NOTICE.txt", "Tailmix.txt", "Tailscale-tsnet.txt", "Tailscale-netns.txt", "Go-runtime.txt", "UPSTREAM.json", "ADAPTATIONS.md", "Sparkle.txt"):
     assert (resources / "Licenses" / name).is_file()
 report = json.loads(subprocess.check_output([str(helper), "--check-host"], text=True, timeout=20))
 assert report["version"] == 1

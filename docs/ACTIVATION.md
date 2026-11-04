@@ -49,10 +49,15 @@ Other VPNs are not stopped or uninstalled automatically.
 
 ## Updates, failures and removal
 
-Build candidates separately. Never overwrite or move a registered app bundle.
-Turn Tailmulti off and remove its background service in Settings before replacing
-it. Reopen the replacement and allow its service. Explain the interruption before
-performing this on a live machine.
+Release builds update in place through Sparkle. Once the updated app opens, it
+compares its build number with the running service (`GET /v1/service`). If the
+service is older, the app asks it to exit (`POST /v1/service/restart`, owner only);
+launchd's KeepAlive starts the bundle's new executable, which always starts inactive,
+and the app turns networking back on if it was on. The app tries this once per launch.
+
+For builds made from source, build candidates separately and never overwrite or
+move a registered app bundle. Turn Tailmulti off and remove its background service
+in Settings before replacing it, then reopen the replacement and allow its service.
 
 On refusal or cleanup failure, inspect the reported check or redacted diagnostics.
 Do not delete another application's resolver files, routes or listeners. If the

@@ -13,12 +13,25 @@ import (
 	"path/filepath"
 	"strconv"
 	"syscall"
+	"time"
 
 	"tailmulti.local/engine/internal/control"
 	"tailmulti.local/engine/internal/host"
 	"tailmulti.local/engine/internal/service"
 	"tailmulti.local/engine/internal/store"
 )
+
+// The app bundle's CFBundleVersion, set at build time so the app can detect an outdated running service.
+var serviceBuild = "dev"
+
+// installedService adds the service's own lifecycle to the account and network manager.
+type installedService struct {
+	*service.Manager
+	restart func()
+}
+
+func (s installedService) Build() string { return serviceBuild }
+func (s installedService) Restart()      { s.restart() }
 
 func main() {
 	if err := run(); err != nil {
@@ -46,7 +59,8 @@ func run() error {
 		return json.NewEncoder(os.Stdout).Encode(struct {
 			Version      int    `json:"version"`
 			OwnerBinding string `json:"ownerBinding"`
-		}{Version: 2, OwnerBinding: "first-console-user"})
+			Build        string `json:"build"`
+		}{Version: 2, OwnerBinding: "first-console-user", Build: serviceBuild})
 	}
 	if *activate && *managed {
 		return errors.New("choose service mode or foreground activation")
@@ -143,7 +157,8 @@ func run() error {
 			return err
 		}
 		defer manager.Close()
-		backend = manager
+		// Restart shuts down normally; launchd's KeepAlive starts the bundled executable again.
+		backend = installedService{Manager: manager, restart: func() { time.Sleep(200 * time.Millisecond); cancel() }}
 	} else {
 		session, err := newSession(ctx, disk, *dir, *activate)
 		if err != nil {

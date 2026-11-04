@@ -7,6 +7,7 @@ import TailmultiKit
 @MainActor
 final class StatusMenuController: NSObject, NSMenuDelegate {
     let model: EngineModel
+    let updater: AppUpdater
     private let statusItem: NSStatusItem
     private let menu = NSMenu()
     private let header = MenuHeaderView()
@@ -20,8 +21,9 @@ final class StatusMenuController: NSObject, NSMenuDelegate {
     private var changes: AnyCancellable?
     private let updates = MenuUpdateQueue()
 
-    init(model: EngineModel) {
+    init(model: EngineModel, updater: AppUpdater) {
         self.model = model
+        self.updater = updater
         statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.squareLength)
         super.init()
         statusItem.autosaveName = "dev.tailmulti.status"
@@ -126,6 +128,9 @@ final class StatusMenuController: NSObject, NSMenuDelegate {
         }
 
         menu.addItem(item("Open Tailmulti", #selector(openMain)))
+        if updater.isAvailable {
+            menu.addItem(item("Check for Updates…", #selector(checkForUpdates)))
+        }
         menu.addItem(item("Settings…", #selector(openSettings), key: ","))
         menu.addItem(.separator())
         menu.addItem(item("Quit Tailmulti", #selector(quit), key: "q"))
@@ -164,6 +169,7 @@ final class StatusMenuController: NSObject, NSMenuDelegate {
     @objc func openMain() { SceneActions.shared.showMain() }
     @objc private func openSettings() { SceneActions.shared.showSettings() }
     @objc private func quit() { NSApp.terminate(nil) }
+    @objc private func checkForUpdates() { updater.checkForUpdates() }
 
     func show(accountID: String) {
         model.selection = accountID

@@ -15,6 +15,9 @@ dependencies retain their own licenses. App bundles include their license and
 notice files, module versions, and the Go runtime license under
 Contents/Resources/Licenses. Missing dependency notices fail the bundle build.
 
+The macOS app embeds Sparkle (https://sparkle-project.org), licensed under the MIT
+license, with its notice in Contents/Resources/Licenses/Sparkle.txt.
+
 upstream/tailmix is an unmodified reference snapshot. Its original licenses,
 copyrights, branding and nested third-party notices are preserved. Its install,
 update and release scripts are reference material, not Tailmulti automation.

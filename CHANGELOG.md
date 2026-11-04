@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.6.0
+
+- **Automatic updates** with Sparkle: **Check for Updates…** in the app menu, menu bar menu and Settings, plus a daily check that can be turned off. Updates must be signed with Tailmulti's update key and notarized.
+- After an update, the app restarts the background service into the new version and turns Tailmulti back on if it was on.
+- The service reports its build and accepts an owner-only restart request.
+- Updating to 0.6.0 itself is manual (earlier versions have no updater); restart the Mac afterwards so the service runs the new version.
+
 ## 0.5.2
 
 - **Add Account** works while Tailmulti is off: signing in turns it on first, in one step, instead of requiring the switch beforehand.

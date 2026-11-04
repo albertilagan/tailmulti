@@ -124,3 +124,48 @@ func TestUnixPeerCredentialsAndPreviewJourney(t *testing.T) {
 		t.Fatal("nonowner status admitted")
 	}
 }
+
+type restartable struct {
+	*daemon.Manager
+	restarted chan struct{}
+}
+
+func (r restartable) Build() string { return "15" }
+func (r restartable) Restart()      { close(r.restarted) }
+
+func TestServiceBuildAndRestartOnlyForInstalledServiceOwner(t *testing.T) {
+	call := func(h http.Handler, uid, method, path, body string) (int, string) {
+		r := httptest.NewRequest(method, "http://tailmulti"+path, strings.NewReader(body))
+		r.Host = "tailmulti"
+		r = r.WithContext(context.WithValue(r.Context(), uidKey{}, uid))
+		w := httptest.NewRecorder()
+		h.ServeHTTP(w, r)
+		return w.Code, w.Body.String()
+	}
+	preview := Handler(backend(t), "501")
+	if code, _ := call(preview, "501", "GET", "/v1/service", ""); code != 409 {
+		t.Fatal("preview reported a service build")
+	}
+	if code, _ := call(preview, "501", "POST", "/v1/service/restart", "{}"); code != 409 {
+		t.Fatal("preview accepted a restart")
+	}
+	svc := restartable{Manager: backend(t), restarted: make(chan struct{})}
+	h := Handler(svc, "501")
+	if code, body := call(h, "501", "GET", "/v1/service", ""); code != 200 || body != `{"build":"15"}` {
+		t.Fatalf("service build %d %s", code, body)
+	}
+	if code, _ := call(h, "502", "POST", "/v1/service/restart", "{}"); code != 403 {
+		t.Fatal("another user restarted the service")
+	}
+	if code, _ := call(h, "501", "POST", "/v1/service/restart", `{"now":true}`); code != 400 {
+		t.Fatal("unexpected restart fields accepted")
+	}
+	if code, _ := call(h, "501", "POST", "/v1/service/restart", "{}"); code != 200 {
+		t.Fatal("owner restart refused")
+	}
+	select {
+	case <-svc.restarted:
+	case <-time.After(time.Second):
+		t.Fatal("restart was not requested")
+	}
+}

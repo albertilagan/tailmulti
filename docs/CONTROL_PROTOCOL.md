@@ -16,6 +16,8 @@ This trusts the selected user's processes. It does not authenticate a code-signi
 | POST /v1/accounts/{id}/disconnect | `{}` | disables desired state, removes mappings, stops identity |
 | POST /v1/accounts/{id}/remove | `{}` | disables and hides account; retains leases and private identity files |
 | POST /v1/accounts/{id}/login | `{}` | transient HTTPS browser URL for a pending login |
+| GET /v1/service | none | `{"build": "15"}`, the app build the running service was bundled with; installed service only |
+| POST /v1/service/restart | `{}` | `{"ok":true}`, then the service exits so launchd starts the bundled executable; installed service only |
 
 Login responses are sensitive and must never be logged. General status and diagnostics never include login URLs, key material or underlying state paths. Device names and local addresses are deliberately available in the authenticated UI; redacted diagnostics contain neither names nor profile IDs. Errors are generic and omit underlying credential-bearing engine errors.
 

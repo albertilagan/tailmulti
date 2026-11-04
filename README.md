@@ -19,6 +19,7 @@ Requires an Apple silicon Mac running macOS 26 or later.
 2. Unzip it and move **Tailmulti.app** to Applications, then open it. The app is signed with Developer ID and notarized by Apple.
 
 The first Mac user who approves the background service becomes its only owner.
+From 0.6.0 the app updates itself; use **Check for Updates…** in its menu.
 
 ## Build from source
 
