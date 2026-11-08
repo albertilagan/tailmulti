@@ -389,7 +389,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private var statusMenu: StatusMenuController?
 
     func applicationDidFinishLaunching(_ notification: Notification) {
-        DockVisibility.apply(DockVisibility.isShown)
+        if !DockVisibility.isShown { NSApp.setActivationPolicy(.accessory) }
         statusMenu = StatusMenuController(model: model, updater: updater)
     }
 
@@ -405,8 +405,8 @@ enum DockVisibility {
 
     @MainActor static func apply(_ shown: Bool) {
         NSApp.setActivationPolicy(shown ? .regular : .accessory)
-        // Changing the policy deactivates the app, which would hide the Settings window it was changed from.
-        NSApp.activate()
+        // The policy change deactivates the app on a later run-loop turn, hiding the Settings window it came from.
+        DispatchQueue.main.async { NSApp.activate() }
     }
 }
 
