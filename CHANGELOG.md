@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.6.2
+
+- **Show in Dock** setting under Settings > General. Turning it off makes Tailmulti a menu bar app; its windows open from the menu bar icon.
+
 ## 0.6.1
 
 - Liquid Glass app icon: two accounts' networks as blue and teal groups in one dot grid, replacing the blank placeholder. The Icon Composer source (`macos/Resources/AppIcon.icon`, SVG layers) is compiled with `actool` during the build.
