@@ -17,6 +17,7 @@ private struct GeneralSettings: View {
     @EnvironmentObject var model: EngineModel
     @EnvironmentObject var updater: AppUpdater
     @State private var confirmingRemoval = false
+    @AppStorage(DockVisibility.key) private var showInDock = true
 
     var body: some View {
         Form {
@@ -38,6 +39,12 @@ private struct GeneralSettings: View {
                     Text("Turning Tailmulti off disconnects every account and returns DNS to normal. Sign-ins are kept, and the accounts that were on reconnect when you turn it back on.")
                         .foregroundStyle(.secondary)
                 }
+            }
+            Section {
+                Toggle("Show in Dock", isOn: $showInDock)
+                    .onChange(of: showInDock) { _, shown in DockVisibility.apply(shown) }
+            } footer: {
+                Text("When hidden, open Tailmulti from its menu bar icon.").foregroundStyle(.secondary)
             }
             if updater.isAvailable {
                 Section("Updates") {

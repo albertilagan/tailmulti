@@ -389,11 +389,25 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private var statusMenu: StatusMenuController?
 
     func applicationDidFinishLaunching(_ notification: Notification) {
+        if !DockVisibility.isShown { NSApp.setActivationPolicy(.accessory) }
         statusMenu = StatusMenuController(model: model, updater: updater)
     }
 
     /// The status menu is the everyday interface, so closing the last window keeps the app running.
     func applicationShouldTerminateAfterLastWindowClosed(_ sender: NSApplication) -> Bool { false }
+}
+
+/// Hiding the Dock icon makes Tailmulti a menu bar app; its windows still open from the status menu.
+enum DockVisibility {
+    static let key = "showInDock"
+
+    static var isShown: Bool { UserDefaults.standard.object(forKey: key) as? Bool ?? true }
+
+    @MainActor static func apply(_ shown: Bool) {
+        NSApp.setActivationPolicy(shown ? .regular : .accessory)
+        // The policy change deactivates the app on a later run-loop turn, hiding the Settings window it came from.
+        DispatchQueue.main.async { NSApp.activate() }
+    }
 }
 
 @main
