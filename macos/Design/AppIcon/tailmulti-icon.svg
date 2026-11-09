@@ -1,0 +1,32 @@
+<svg width="1024" height="1024" viewBox="0 0 1024 1024" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <title>Tailmulti icon (flattened composite of the Icon Composer layers)</title>
+  <defs>
+    <linearGradient id="bg" x1="512" y1="0" x2="512" y2="1024" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#252A3A"/>
+      <stop offset="1" stop-color="#11141B"/>
+    </linearGradient>
+  </defs>
+  <rect width="1024" height="1024" rx="229" fill="url(#bg)"/>
+  <g fill="#8E93A3" opacity="0.3">
+    <circle cx="605" cy="233" r="57"/>
+    <circle cx="791" cy="233" r="57"/>
+    <circle cx="605" cy="419" r="57"/>
+    <circle cx="791" cy="419" r="57"/>
+    <circle cx="233" cy="605" r="57"/>
+    <circle cx="419" cy="605" r="57"/>
+    <circle cx="233" cy="791" r="57"/>
+    <circle cx="419" cy="791" r="57"/>
+  </g>
+  <g fill="#4C8DFF">
+    <circle cx="233" cy="233" r="57"/>
+    <circle cx="419" cy="233" r="57"/>
+    <circle cx="233" cy="419" r="57"/>
+    <circle cx="419" cy="419" r="57"/>
+  </g>
+  <g fill="#2ED3B7">
+    <circle cx="605" cy="605" r="57"/>
+    <circle cx="791" cy="605" r="57"/>
+    <circle cx="605" cy="791" r="57"/>
+    <circle cx="791" cy="791" r="57"/>
+  </g>
+</svg>
