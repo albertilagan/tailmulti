@@ -179,6 +179,13 @@ func TestStatusAndDevices(t *testing.T) {
 	if !strings.Contains(out, "nas.home.example") || !strings.Contains(out, "198.18.0.2") || strings.Contains(out, "laptop") {
 		t.Fatalf("devices:\n%s", out)
 	}
+	// Flags after "--" are positional: this is two arguments, not the --online filter.
+	if code, _, _ := h.run("devices", "--", "home", "--online"); code != 2 {
+		t.Fatalf("flag after -- was parsed: exit %d", code)
+	}
+	if out = h.ok("devices", "--online", "--", "home"); strings.Contains(out, "laptop") {
+		t.Fatalf("devices with --:\n%s", out)
+	}
 	if out = h.ok("devices", "Work"); !strings.Contains(out, "No devices.") {
 		t.Fatalf("devices for an empty account:\n%s", out)
 	}

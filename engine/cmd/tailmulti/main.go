@@ -86,7 +86,14 @@ func parse(name string, args []string, flags map[string]*bool) ([]string, error)
 	for flagName, target := range flags {
 		fs.BoolVar(target, flagName, false, "")
 	}
-	var positional []string
+	// Everything after "--" is positional, even if it looks like a flag.
+	var positional, literal []string
+	for i, arg := range args {
+		if arg == "--" {
+			args, literal = args[:i], args[i+1:]
+			break
+		}
+	}
 	for len(args) > 0 {
 		if err := fs.Parse(args); err != nil {
 			return nil, usageError(err.Error())
@@ -97,7 +104,7 @@ func parse(name string, args []string, flags map[string]*bool) ([]string, error)
 			args = args[1:]
 		}
 	}
-	return positional, nil
+	return append(positional, literal...), nil
 }
 
 func dispatch(ctx context.Context, args []string, e env) error {
