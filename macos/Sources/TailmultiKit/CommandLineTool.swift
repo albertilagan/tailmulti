@@ -46,8 +46,12 @@ public struct CommandLineTool: Sendable {
         let files = FileManager.default
         // Directories the user owns, such as a Homebrew prefix, need no administrator prompt.
         if files.isWritableFile(atPath: link.deletingLastPathComponent().path) {
-            try? files.removeItem(at: link)
-            if (try? files.createSymbolicLink(atPath: link.path, withDestinationPath: tool.path)) != nil { return true }
+            // Rename over the old link so a failure never leaves the command missing.
+            let staged = link.path + ".\(ProcessInfo.processInfo.processIdentifier).tmp"
+            if (try? files.createSymbolicLink(atPath: staged, withDestinationPath: tool.path)) != nil {
+                if rename(staged, link.path) == 0 { return true }
+                try? files.removeItem(atPath: staged)
+            }
         }
         guard try elevate(.install, tool, link) else { return false }
         guard state == .installed else { throw ControlError("The command line tool couldn't be installed.") }
