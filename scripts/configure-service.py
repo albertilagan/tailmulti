@@ -11,6 +11,8 @@ from pathlib import Path
 LABEL = "dev.tailmulti.tailmultid"
 APP_ID = "dev.tailmulti.app"
 HELPER = "Contents/Library/HelperTools/tailmultid"
+CLI = "Contents/Helpers/tailmulti"
+CLI_ID = "dev.tailmulti.cli"
 
 
 def signature_team(path: Path) -> str:
@@ -43,7 +45,7 @@ def configure(app: Path, signing_config: str) -> None:
         for part in (sparkle / "Versions/B/Autoupdate", sparkle / "Versions/B/Updater.app", sparkle):
             subprocess.run(["/usr/bin/codesign", "--force", "--sign", identity, "--options", "runtime",
                             timestamp, str(part)], check=True, timeout=120)
-    for path, identifier in ((helper, LABEL), (app, APP_ID)):
+    for path, identifier in ((helper, LABEL), (app / CLI, CLI_ID), (app, APP_ID)):
         if path == app:
             team = signature_team(helper) if mode != "adhoc" else ""
             if mode != "adhoc" and not team:

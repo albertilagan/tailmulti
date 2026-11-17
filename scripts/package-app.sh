@@ -15,7 +15,7 @@ python3 -c 'import sys; sys.path.insert(0, "scripts"); from source_export import
 
 ./scripts/build-app.sh --developer-id-sign --candidate
 app=$(cat build/candidate-app-path.txt)
-for part in "$app" "$app/Contents/Library/HelperTools/tailmultid"; do
+for part in "$app" "$app/Contents/Library/HelperTools/tailmultid" "$app/Contents/Helpers/tailmulti"; do
     team=$(/usr/bin/codesign --display --verbose=4 "$part" 2>&1 | sed -n 's/^TeamIdentifier=//p')
     [ "$team" = "$TAILMULTI_TEAM_ID" ] || { echo "Unexpected signing team for $part" >&2; exit 1; }
 done

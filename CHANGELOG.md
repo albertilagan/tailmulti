@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.7.0
+
+- **Command line**: the app bundles `tailmulti` (`Contents/Helpers/tailmulti`) with `status`, `devices`, `up`, `down`, `account`, `login`, `connect`, `disconnect`, `doctor` and `version`. It uses the same owner-only control socket as the app; the service is unchanged.
+
 ## 0.6.2
 
 - **Show in Dock** setting under Settings > General. Turning it off makes Tailmulti a menu bar app; its windows open from the menu bar icon.

@@ -13,6 +13,17 @@ Workflow YAML and permissions were checked locally. GitHub-hosted execution has
 not run because the repository has not been published. The source archive and
 checksum are local artifacts; no release has been published.
 
+## Command line, 2026-11-18
+
+`scripts/check.sh` passed with the new `tailmulti` command: Go tests drive every
+command through the real control server with a scripted backend, including server
+identity refusal, and the preview IPC check runs the built command against the
+real preview daemon. The ad-hoc candidate bundles and verifies the command.
+Against an installed, active service only the read-only `version` and `status`
+were run. `up`, `down`, `login`, `connect`, `disconnect` and account changes have
+not been run against a live service, and a Developer ID signed, notarized bundle
+containing the command has not been built.
+
 ## Automated evidence
 
 Before open-source preparation, the current menu recovery candidate passed 71
