@@ -46,6 +46,7 @@ private struct GeneralSettings: View {
             } footer: {
                 Text("When hidden, open Tailmulti from its menu bar icon.").foregroundStyle(.secondary)
             }
+            CommandLineSection()
             if updater.isAvailable {
                 Section("Updates") {
                     Toggle("Check for updates automatically", isOn: Binding(
@@ -103,6 +104,56 @@ private struct GeneralSettings: View {
         case .serviceProblem: return "Background service not responding correctly"
         case .enableNetworking: return "Off"
         case .networkingActive: return "On"
+        }
+    }
+}
+
+private struct CommandLineSection: View {
+    private let tool = CommandLineTool(bundle: Bundle.main.bundleURL)
+    @State private var state = CommandLineTool.State.unavailable
+    @State private var error: String?
+    @State private var working = false
+
+    var body: some View {
+        if tool.state != .unavailable {
+            Section {
+                LabeledContent {
+                    switch state {
+                    case .installed: Button("Remove") { run { try tool.remove() } }
+                    case .linkedElsewhere: Button("Reinstall...") { run { try tool.install() } }
+                    default: Button("Install...") { run { try tool.install() } }
+                    }
+                } label: {
+                    Text("tailmulti command")
+                    Text(caption).font(.caption).foregroundStyle(.secondary)
+                }
+                .disabled(working)
+                if let error { Text(error).foregroundStyle(.orange).textSelection(.enabled) }
+            } header: {
+                Text("Command Line")
+            }
+            .onAppear { state = tool.state }
+        }
+    }
+
+    private var caption: String {
+        switch state {
+        case .installed: "Installed. Try \"tailmulti status\" in a new Terminal window."
+        case .linkedElsewhere: "\(tool.link.path) points to another copy of Tailmulti."
+        case .blocked: "\(tool.link.path) is in use by something else."
+        default: "Control Tailmulti from Terminal. Adds a link at \(tool.link.path); macOS may ask for an administrator password."
+        }
+    }
+
+    @MainActor private func finish(_ failure: String?) { error = failure; state = tool.state; working = false }
+
+    private func run(_ change: @escaping @Sendable () throws -> Bool) {
+        working = true; error = nil
+        // The administrator prompt blocks until answered, so it stays off the main thread.
+        Task.detached {
+            var failure: String?
+            do { _ = try change() } catch { failure = error.localizedDescription }
+            await finish(failure)
         }
     }
 }

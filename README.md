@@ -58,12 +58,8 @@ ad-hoc bundle for development checks, with background-service registration disab
 ## Command line
 
 The app bundles a `tailmulti` command that talks to the same background service.
-Put it on your `PATH` once:
-
-```sh
-sudo mkdir -p /usr/local/bin
-sudo ln -s /Applications/Tailmulti.app/Contents/Helpers/tailmulti /usr/local/bin/tailmulti
-```
+Install it from **Settings > General > Command Line > Install...**, which links it
+at `/usr/local/bin/tailmulti`.
 
 ```sh
 tailmulti status              # switch, accounts and conflicts

@@ -79,12 +79,16 @@ and boot-before-login behavior still need live acceptance testing.
 
 `Tailmulti.app/Contents/Helpers/tailmulti` controls the same service from a terminal:
 `status`, `devices`, `up`, `down`, `account add|remove|list`, `login`, `connect`,
-`disconnect`, `doctor` and `version`. Run `tailmulti help` for the full list. Link it
-into a directory on your `PATH`:
+`disconnect`, `doctor` and `version`. Run `tailmulti help` for the full list.
+
+Choose **Settings > General > Command Line > Install...** to link it at
+`/usr/local/bin/tailmulti`. macOS asks for an administrator password when that
+directory is protected. Tailmulti only creates or removes a symbolic link there and
+never replaces a file it did not create. **Remove** in the same place deletes the link.
+To link it elsewhere, do it by hand:
 
 ```sh
-sudo mkdir -p /usr/local/bin
-sudo ln -s /Applications/Tailmulti.app/Contents/Helpers/tailmulti /usr/local/bin/tailmulti
+ln -s /Applications/Tailmulti.app/Contents/Helpers/tailmulti ~/bin/tailmulti
 ```
 
 The link follows app updates. The command runs as you, needs no `sudo`, and is
