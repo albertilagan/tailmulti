@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.7.1
+
+- **Install the command from the app**: Settings > General > Command Line links `tailmulti` at `/usr/local/bin`, asking for an administrator password when needed, and can remove the link again. 0.7.0 required linking it by hand.
+
 ## 0.7.0
 
 - **Command line**: the app bundles `tailmulti` (`Contents/Helpers/tailmulti`) with `status`, `devices`, `up`, `down`, `account`, `login`, `connect`, `disconnect`, `doctor` and `version`. It uses the same owner-only control socket as the app; the service is unchanged.
