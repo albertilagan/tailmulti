@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 0.7.0
 
 - **Command line**: the app bundles `tailmulti` (`Contents/Helpers/tailmulti`) with `status`, `devices`, `up`, `down`, `account`, `login`, `connect`, `disconnect`, `doctor` and `version`. It uses the same owner-only control socket as the app; the service is unchanged.
 
