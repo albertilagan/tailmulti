@@ -75,6 +75,25 @@ Keep the approved app in place. Move it to your preferred location, usually
 Applications, before allowing the background service, and do not replace or move a registered bundle. Relocation
 and boot-before-login behavior still need live acceptance testing.
 
+## Command line
+
+`Tailmulti.app/Contents/Helpers/tailmulti` controls the same service from a terminal:
+`status`, `devices`, `up`, `down`, `account add|remove|list`, `login`, `connect`,
+`disconnect`, `doctor` and `version`. Run `tailmulti help` for the full list. Link it
+into a directory on your `PATH`:
+
+```sh
+sudo mkdir -p /usr/local/bin
+sudo ln -s /Applications/Tailmulti.app/Contents/Helpers/tailmulti /usr/local/bin/tailmulti
+```
+
+The link follows app updates. The command runs as you, needs no `sudo`, and is
+accepted only for the service's owner. `tailmulti up` and `down` change routes and
+DNS for the whole Mac, exactly like the switch in the app. `tailmulti login NAME`
+opens the sign-in page in your browser; over SSH, `--print-url` prints the address
+instead. Treat that address as a credential. Allowing the background service the
+first time, updates and removal remain in the app.
+
 ## Updates
 
 From 0.6.0, release builds update themselves with [Sparkle](https://sparkle-project.org).

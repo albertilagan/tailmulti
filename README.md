@@ -55,6 +55,28 @@ For certificate selection, updates, and removal, see [installation](docs/INSTALL
 Without a signing certificate, `scripts/build-app.sh --candidate` builds an
 ad-hoc bundle for development checks, with background-service registration disabled.
 
+## Command line
+
+The app bundles a `tailmulti` command that talks to the same background service.
+Put it on your `PATH` once:
+
+```sh
+sudo mkdir -p /usr/local/bin
+sudo ln -s /Applications/Tailmulti.app/Contents/Helpers/tailmulti /usr/local/bin/tailmulti
+```
+
+```sh
+tailmulti status              # switch, accounts and conflicts
+tailmulti up                  # turn Tailmulti on; down turns it off and restores DNS
+tailmulti account add Work    # then: tailmulti login Work
+tailmulti devices Work --online
+tailmulti disconnect Work     # one account; the other stays connected
+tailmulti doctor              # host setup checks
+```
+
+`status`, `devices` and `doctor` take `--json`. Only the service's owner can use
+the command. Allowing the background service the first time still happens in the app.
+
 ## What works and what remains
 
 - Full tailnet hostnames and Tailscale Services receive account-specific local addresses.

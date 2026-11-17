@@ -25,6 +25,8 @@ helper = app / "Contents/Library/HelperTools/tailmultid"
 assert helper.is_file() and not helper.is_symlink()
 assert helper.stat().st_mode & 0o022 == 0
 assert hashlib.sha256(helper.read_bytes()).hexdigest() == manifest["helperSHA256"]
+cli = app / "Contents/Helpers/tailmulti"
+assert cli.is_file() and not cli.is_symlink() and cli.stat().st_mode & 0o022 == 0
 launch = plistlib.loads((app / "Contents/Library/LaunchDaemons/dev.tailmulti.tailmultid.plist").read_bytes())
 assert launch["Label"] == manifest["serviceLabel"]
 assert launch["BundleProgram"] == "Contents/Library/HelperTools/tailmultid"
@@ -58,7 +60,7 @@ for source in (ROOT / "macos/Sources").rglob("*.swift"):
     assert "openInstaller" not in source.read_text() and "TailmultiSetup.pkg" not in source.read_text()
 subprocess.run(["/usr/bin/codesign", "--verify", "--deep", "--strict", str(app)], check=True)
 teams = []
-for target, identifier in ((app, "dev.tailmulti.app"), (helper, "dev.tailmulti.tailmultid")):
+for target, identifier in ((app, "dev.tailmulti.app"), (helper, "dev.tailmulti.tailmultid"), (cli, "dev.tailmulti.cli")):
     if manifest["signingMode"] != "adhoc":
         subprocess.run(["/usr/bin/codesign", "--verify", "--strict", "-R",
                         f'=anchor apple generic and identifier "{identifier}"', str(target)], check=True)
@@ -71,6 +73,9 @@ if teams:
     assert len(set(teams)) == 1 and teams[0] == manifest["signingTeam"]
 metadata = json.loads(subprocess.check_output([str(helper), "--build-info"], text=True, timeout=10))
 assert metadata == {"version": 2, "ownerBinding": "first-console-user", "build": info["CFBundleVersion"]}, "Service build does not match the app"
+# A socket path that cannot exist keeps this check away from any installed service.
+cli_version = subprocess.check_output([str(cli), "--socket", str(app / "no-service.sock"), "version"], text=True, timeout=10)
+assert cli_version.splitlines()[0] == f"tailmulti {info['CFBundleShortVersionString']} (build {info['CFBundleVersion']})", "Bundled command does not match the app"
 # Sparkle: embedded once, no sandbox-only XPC services, and only a bundle-relative rpath.
 sparkle = app / "Contents/Frameworks/Sparkle.framework"
 assert (sparkle / "Versions/B/Sparkle").is_file() and (sparkle / "Versions/B/Autoupdate").is_file()

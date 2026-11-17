@@ -32,12 +32,14 @@ fi
 mkdir -p build
 build_number=$(/usr/bin/plutil -extract CFBundleVersion raw macos/Resources/Info.plist)
 scripts/go.sh build -trimpath -ldflags "-X main.serviceBuild=$build_number" -o ../build/tailmultid ./cmd/tailmultid
+app_version=$(/usr/bin/plutil -extract CFBundleShortVersionString raw macos/Resources/Info.plist)
+scripts/go.sh build -trimpath -ldflags "-X main.version=$app_version -X main.build=$build_number" -o ../build/tailmulti ./cmd/tailmulti
 scripts/swift.sh build -c release
 swiftbin=$(scripts/swift.sh build -c release --show-bin-path)
 stage_root=$(mktemp -d "$root/build/.app-stage.XXXXXX")
 app="$stage_root/Tailmulti.app"
 trap 'rm -rf "$stage_root"' EXIT HUP INT TERM
-mkdir -p "$app/Contents/MacOS" "$app/Contents/Library/HelperTools" "$app/Contents/Resources/Licenses"
+mkdir -p "$app/Contents/MacOS" "$app/Contents/Library/HelperTools" "$app/Contents/Helpers" "$app/Contents/Resources/Licenses"
 cp "$swiftbin/Tailmulti" "$app/Contents/MacOS/Tailmulti"
 # Sparkle lives in Contents/Frameworks. Its XPC services only serve sandboxed apps, so they are dropped.
 mkdir -p "$app/Contents/Frameworks"
@@ -49,6 +51,8 @@ for rpath in $(/usr/bin/otool -l "$app/Contents/MacOS/Tailmulti" | awk '$1 == "c
 done
 /usr/bin/install_name_tool -add_rpath @executable_path/../Frameworks "$app/Contents/MacOS/Tailmulti"
 cp build/tailmultid "$app/Contents/Library/HelperTools/tailmultid"
+# Not in Contents/MacOS: the name collides with the app executable on case-insensitive volumes.
+cp build/tailmulti "$app/Contents/Helpers/tailmulti"
 cp macos/Resources/Info.plist "$app/Contents/Info.plist"
 # Compile the Icon Composer source (SVG layers) into the Liquid Glass asset catalog and a fallback .icns,
 # so the repository holds no binary artwork.
@@ -63,7 +67,7 @@ cp engine/tsnet/LICENSE "$app/Contents/Resources/Licenses/Tailscale-tsnet.txt"
 cp engine/netns/LICENSE "$app/Contents/Resources/Licenses/Tailscale-netns.txt"
 cp engine/UPSTREAM.json engine/ADAPTATIONS.md "$app/Contents/Resources/Licenses/"
 cp .cache/swift-build/checkouts/Sparkle/LICENSE "$app/Contents/Resources/Licenses/Sparkle.txt"
-scripts/go.sh list -deps -json ./cmd/tailmultid > build/packages.json
+scripts/go.sh list -deps -json ./cmd/tailmultid ./cmd/tailmulti > build/packages.json
 cp "$(scripts/go.sh env GOROOT)/LICENSE" "$app/Contents/Resources/Licenses/Go-runtime.txt"
 python3 scripts/module-notices.py build/packages.json "$app/Contents/Resources/Licenses"
 python3 scripts/configure-service.py --app "$app" --signing-config "$signing_config"

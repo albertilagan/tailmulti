@@ -2,6 +2,8 @@
 
 Transport: HTTP/1.1 over a Unix-domain socket, Host `tailmulti`. Production path is `/Library/Application Support/Tailmulti/run/control.sock`. Every request authenticates the kernel peer UID against the explicitly configured desktop owner or root. The client verifies that the server UID is root, or the current user for an explicitly selected preview socket. Production socket parents are root-owned and not writable by the app. On its first approved launch the service binds the user signed in at the console and exclusively creates the root-owned policy before opening control. Later launches use the stored owner. No client can claim or change ownership through IPC.
 
+Two clients ship in the app bundle: the SwiftUI app and the `tailmulti` command (`Contents/Helpers/tailmulti`). Both verify the server UID and neither has access the other lacks.
+
 This trusts the selected user's processes. It does not authenticate a code-signing identity, defend against root, or authorize arbitrary local users. There is no TCP endpoint, bearer token, raw LocalAPI proxy, auth-key input, arbitrary path, shell command or update API. Browser Origin headers are rejected. Request bodies are capped at 4 KiB, reject unknown fields and must contain exactly one JSON value. Responses carry Content-Length and Cache-Control: no-store.
 
 | Method and path | Request | Response |
@@ -19,7 +21,7 @@ This trusts the selected user's processes. It does not authenticate a code-signi
 | GET /v1/service | none | `{"build": "15"}`, the app build the running service was bundled with; installed service only |
 | POST /v1/service/restart | `{}` | `{"ok":true}`, then the service exits so launchd starts the bundled executable; installed service only |
 
-Login responses are sensitive and must never be logged. General status and diagnostics never include login URLs, key material or underlying state paths. Device names and local addresses are deliberately available in the authenticated UI; redacted diagnostics contain neither names nor profile IDs. Errors are generic and omit underlying credential-bearing engine errors.
+Login responses are sensitive and must never be logged. `tailmulti login` hands the address to the browser and prints it only when asked with `--print-url`. General status and diagnostics never include login URLs, key material or underlying state paths. Device names and local addresses are deliberately available in the authenticated UI; redacted diagnostics contain neither names nor profile IDs. Errors are generic and omit underlying credential-bearing engine errors.
 
 Connect in preview mode always returns HTTP 409 and leaves the account disabled. The app never reports simulated peers or successful connectivity in preview. HTTP 403 means peer authorization or request origin/Host checks failed. HTTP 400 means malformed input. HTTP 409 means the requested operation could not be completed. IDs cannot be supplied at creation and never derive from account names.
 

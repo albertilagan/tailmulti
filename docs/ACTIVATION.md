@@ -14,6 +14,7 @@ socket before claiming setup succeeded.
 | --- | --- |
 | `Tailmulti.app/Contents/Library/LaunchDaemons/dev.tailmulti.tailmultid.plist` | Bundle-relative service definition |
 | `Tailmulti.app/Contents/Library/HelperTools/tailmultid` | Tailmulti's signed engine |
+| `Tailmulti.app/Contents/Helpers/tailmulti` | Signed command-line client; unprivileged, holds no credentials |
 | `/Library/Application Support/Tailmulti/installation.json` | Root-owned owner policy |
 | `/Library/Application Support/Tailmulti/state` | Private account identities and persistent mappings |
 | `/Library/Application Support/Tailmulti/run/control.sock` | Authenticated control interface |
