@@ -56,13 +56,34 @@ private struct OffAccountView: View {
     }
 }
 
+private struct DeviceSearchFocusKey: FocusedValueKey {
+    typealias Value = () -> Void
+}
+
+extension FocusedValues {
+    var focusDeviceSearch: (() -> Void)? {
+        get { self[DeviceSearchFocusKey.self] }
+        set { self[DeviceSearchFocusKey.self] = newValue }
+    }
+}
+
 private struct ActiveAccountView: View {
     @EnvironmentObject var model: EngineModel
     let account: Account
+    @State private var searchText = ""
+    @FocusState private var searchFocused: Bool
 
-    private var devices: [Device] {
-        model.devices(for: account).sorted { ($0.online ? 0 : 1, $0.name) < ($1.online ? 0 : 1, $1.name) }
+    private var allDevices: [Device] {
+        DeviceMenuCatalog.devices(model.status?.devices ?? [], accountID: account.id, query: "")
     }
+
+    private var trimmedQuery: String { DeviceMenuCatalog.trimmed(searchText) }
+
+    private var filteredDevices: [Device] {
+        trimmedQuery.isEmpty ? allDevices : allDevices.filter { DeviceMenuCatalog.matches($0, trimmedQuery: trimmedQuery) }
+    }
+
+    private var canSearch: Bool { !allDevices.isEmpty && !model.networkingBlocked }
 
     var body: some View {
         VStack(spacing: 0) {
@@ -78,11 +99,64 @@ private struct ActiveAccountView: View {
             if let conflicts = model.status?.conflicts, !conflicts.isEmpty {
                 ConflictBanner(conflicts: conflicts).padding(.horizontal, 20).padding(.bottom, 10)
             }
+            if canSearch {
+                searchBar
+                    .padding(.horizontal, 20)
+                    .padding(.bottom, 10)
+            }
             Divider()
-            if devices.isEmpty || model.networkingBlocked {
+            if allDevices.isEmpty || model.networkingBlocked {
                 emptyState.frame(maxWidth: .infinity, maxHeight: .infinity)
+            } else if filteredDevices.isEmpty {
+                ContentUnavailableView.search(text: trimmedQuery)
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
             } else {
-                DeviceTable(devices: devices)
+                DeviceTable(devices: filteredDevices)
+            }
+        }
+        .focusedSceneValue(\.focusDeviceSearch, canSearch ? { searchFocused = true } : nil)
+        .onChange(of: account.id) { _, _ in
+            searchText = ""
+            searchFocused = false
+        }
+    }
+
+    private var searchBar: some View {
+        HStack(spacing: 8) {
+            HStack(spacing: 6) {
+                Image(systemName: "magnifyingglass")
+                    .foregroundStyle(.secondary)
+                    .accessibilityHidden(true)
+                TextField("Search name or IP", text: $searchText)
+                    .textFieldStyle(.plain)
+                    .focused($searchFocused)
+                    .onExitCommand {
+                        if !searchText.isEmpty { searchText = "" }
+                        else { searchFocused = false }
+                    }
+                    .accessibilityLabel("Search devices by name or IP")
+                if !searchText.isEmpty {
+                    Button {
+                        searchText = ""
+                    } label: {
+                        Image(systemName: "xmark.circle.fill")
+                            .foregroundStyle(.secondary)
+                    }
+                    .buttonStyle(.plain)
+                    .help("Clear search")
+                    .accessibilityLabel("Clear search")
+                }
+            }
+            .padding(.horizontal, 8)
+            .padding(.vertical, 5)
+            .background(.background.secondary, in: RoundedRectangle(cornerRadius: 7))
+            .overlay(RoundedRectangle(cornerRadius: 7).strokeBorder(.separator))
+            if !trimmedQuery.isEmpty {
+                Text("\(filteredDevices.count) of \(allDevices.count)")
+                    .font(.callout)
+                    .foregroundStyle(.secondary)
+                    .monospacedDigit()
+                    .lineLimit(1)
             }
         }
     }
@@ -126,8 +200,8 @@ private struct ActiveAccountView: View {
     private var locked: Bool { model.busy || model.networkTransition || !model.isNetworkingActive }
 
     private var summary: String? {
-        guard account.phase == .connected, !model.networkingBlocked, !devices.isEmpty else { return nil }
-        return "\(devices.filter(\.online).count) of \(devices.count) devices online"
+        guard account.phase == .connected, !model.networkingBlocked, !allDevices.isEmpty else { return nil }
+        return "\(allDevices.filter(\.online).count) of \(allDevices.count) devices online"
     }
 
     @ViewBuilder private var emptyState: some View {

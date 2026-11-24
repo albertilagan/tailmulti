@@ -424,6 +424,7 @@ struct TailmultiApp: App {
         .defaultSize(width: 820, height: 540)
         .commands {
             CommandGroup(replacing: .newItem) { AddAccountCommand(model: delegate.model) }
+            CommandGroup(after: .textEditing) { FindDevicesCommand() }
             CommandGroup(after: .appInfo) { CheckForUpdatesCommand(updater: delegate.updater) }
         }
 
@@ -443,5 +444,15 @@ private struct AddAccountCommand: View {
         Button("Add Account...") { model.showingAdd = true }
             .keyboardShortcut("n")
             .disabled(!model.canAddAccount)
+    }
+}
+
+private struct FindDevicesCommand: View {
+    @FocusedValue(\.focusDeviceSearch) private var focusDeviceSearch
+
+    var body: some View {
+        Button("Find Devices...") { focusDeviceSearch?() }
+            .keyboardShortcut("f")
+            .disabled(focusDeviceSearch == nil)
     }
 }
