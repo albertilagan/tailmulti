@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.7.2
+
+- **Original Tailscale IPs**: show each node's original Tailscale IP alongside its local Tailmulti IP in the account device table, each device's menu bar submenu (with separate copy actions and search matching), and `tailmulti devices`.
+
 ## 0.7.1
 
 - **Install the command from the app**: Settings > General > Command Line links `tailmulti` at `/usr/local/bin`, asking for an administrator password when needed, and can remove the link again. 0.7.0 required linking it by hand.

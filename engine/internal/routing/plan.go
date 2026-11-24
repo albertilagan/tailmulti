@@ -38,10 +38,11 @@ type State struct {
 	IdentityIPs map[string][]netip.Addr `json:"identityIPs,omitempty"`
 }
 type Device struct {
-	ProfileID string       `json:"profileId"`
-	Name      string       `json:"name"`
-	Addresses []netip.Addr `json:"addresses"`
-	Online    bool         `json:"online"`
+	ProfileID          string       `json:"profileId"`
+	Name               string       `json:"name"`
+	Addresses          []netip.Addr `json:"addresses"`
+	TailscaleAddresses []netip.Addr `json:"tailscaleAddresses,omitempty"`
+	Online             bool         `json:"online"`
 }
 type Plan struct {
 	Mapper         *packetmap.Mapper
@@ -248,7 +249,7 @@ func Build(s *State, snapshots []profile.Status) (*Plan, error) {
 		}
 		for _, destination := range targets[st.ProfileID] {
 			name := destination.name
-			dev := Device{ProfileID: st.ProfileID, Name: name, Online: destination.online, Addresses: []netip.Addr{}}
+			dev := Device{ProfileID: st.ProfileID, Name: name, Online: destination.online, Addresses: []netip.Addr{}, TailscaleAddresses: []netip.Addr{}}
 			if destination.id == "" {
 				continue
 			}
@@ -275,6 +276,7 @@ func Build(s *State, snapshots []profile.Status) (*Plan, error) {
 				table.Destinations.Insert(netip.PrefixFrom(l.EffectiveIP, l.EffectiveIP.BitLen()), packetmap.Destination{ProfileID: st.ProfileID, CanonicalIP: ip})
 				table.InboundPeers[st.ProfileID].Insert(netip.PrefixFrom(ip, ip.BitLen()), l.EffectiveIP)
 				dev.Addresses = append(dev.Addresses, l.EffectiveIP)
+				dev.TailscaleAddresses = append(dev.TailscaleAddresses, ip)
 				if ValidName(name) && len(owners[name]) == 1 {
 					p.Records[name] = append(p.Records[name], l.EffectiveIP)
 					p.NameOwners[name] = st.ProfileID

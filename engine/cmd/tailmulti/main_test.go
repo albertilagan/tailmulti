@@ -117,8 +117,8 @@ func newFake() *fake {
 			{ID: workID, Name: "Work", State: "disconnected"},
 		},
 		Devices: []routing.Device{
-			{ProfileID: homeID, Name: "nas.home.example", Addresses: []netip.Addr{netip.MustParseAddr("198.18.0.2")}, Online: true},
-			{ProfileID: homeID, Name: "laptop.home.example", Addresses: []netip.Addr{netip.MustParseAddr("198.18.0.3")}},
+			{ProfileID: homeID, Name: "nas.home.example", Addresses: []netip.Addr{netip.MustParseAddr("198.18.0.2")}, TailscaleAddresses: []netip.Addr{netip.MustParseAddr("100.64.0.2")}, Online: true},
+			{ProfileID: homeID, Name: "laptop.home.example", Addresses: []netip.Addr{netip.MustParseAddr("198.18.0.3")}, TailscaleAddresses: []netip.Addr{netip.MustParseAddr("100.64.0.3")}},
 		}}}
 }
 
@@ -176,7 +176,7 @@ func TestStatusAndDevices(t *testing.T) {
 		t.Fatalf("status --json: %v %+v", err, decoded)
 	}
 	out = h.ok("devices", "home", "--online")
-	if !strings.Contains(out, "nas.home.example") || !strings.Contains(out, "198.18.0.2") || strings.Contains(out, "laptop") {
+	if !strings.Contains(out, "nas.home.example") || !strings.Contains(out, "198.18.0.2") || !strings.Contains(out, "100.64.0.2") || strings.Contains(out, "laptop") {
 		t.Fatalf("devices:\n%s", out)
 	}
 	// Flags after "--" are positional: this is two arguments, not the --online filter.
