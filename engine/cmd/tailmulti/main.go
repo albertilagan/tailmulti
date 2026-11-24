@@ -29,7 +29,7 @@ const usage = `Usage: tailmulti [--socket PATH] <command>
 Commands:
   status [--json]                   Show the switch, accounts and conflicts
   devices [ACCOUNT] [--online] [--json]
-                                    List devices and their local addresses
+                                    List devices and their local and Tailscale addresses
   up                                Turn Tailmulti on
   down [--keep-dns]                 Turn Tailmulti off and restore normal DNS
   account list                      List accounts
@@ -525,13 +525,13 @@ func printDevices(w io.Writer, s controlclient.Status, only string, online, asJS
 		return nil
 	}
 	tw := tabwriter.NewWriter(w, 0, 0, 2, ' ', 0)
-	fmt.Fprintln(tw, "ACCOUNT\tDEVICE\tADDRESSES\tONLINE")
+	fmt.Fprintln(tw, "ACCOUNT\tDEVICE\tLOCAL\tTAILSCALE\tONLINE")
 	for _, d := range devices {
 		state := "no"
 		if d.Online {
 			state = "yes"
 		}
-		fmt.Fprintf(tw, "%s\t%s\t%s\t%s\n", names[d.ProfileID], d.Name, strings.Join(d.Addresses, ", "), state)
+		fmt.Fprintf(tw, "%s\t%s\t%s\t%s\t%s\n", names[d.ProfileID], d.Name, strings.Join(d.Addresses, ", "), strings.Join(d.TailscaleAddresses, ", "), state)
 	}
 	return tw.Flush()
 }

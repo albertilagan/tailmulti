@@ -21,7 +21,7 @@ This trusts the selected user's processes. It does not authenticate a code-signi
 | GET /v1/service | none | `{"build": "15"}`, the app build the running service was bundled with; installed service only |
 | POST /v1/service/restart | `{}` | `{"ok":true}`, then the service exits so launchd starts the bundled executable; installed service only |
 
-Login responses are sensitive and must never be logged. `tailmulti login` hands the address to the browser and prints it only when asked with `--print-url`. General status and diagnostics never include login URLs, key material or underlying state paths. Device names and local addresses are deliberately available in the authenticated UI; redacted diagnostics contain neither names nor profile IDs. Errors are generic and omit underlying credential-bearing engine errors.
+Login responses are sensitive and must never be logged. `tailmulti login` hands the address to the browser and prints it only when asked with `--print-url`. General status and diagnostics never include login URLs, key material or underlying state paths. Device names, local addresses and original Tailscale addresses are deliberately available in the authenticated UI; redacted diagnostics contain neither names nor profile IDs. Errors are generic and omit underlying credential-bearing engine errors.
 
 Connect in preview mode always returns HTTP 409 and leaves the account disabled. The app never reports simulated peers or successful connectivity in preview. HTTP 403 means peer authorization or request origin/Host checks failed. HTTP 400 means malformed input. HTTP 409 means the requested operation could not be completed. IDs cannot be supplied at creation and never derive from account names.
 

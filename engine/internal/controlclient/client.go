@@ -34,10 +34,11 @@ type Account struct {
 }
 
 type Device struct {
-	ProfileID string   `json:"profileId"`
-	Name      string   `json:"name"`
-	Addresses []string `json:"addresses"`
-	Online    bool     `json:"online"`
+	ProfileID          string   `json:"profileId"`
+	Name               string   `json:"name"`
+	Addresses          []string `json:"addresses"`
+	TailscaleAddresses []string `json:"tailscaleAddresses,omitempty"`
+	Online             bool     `json:"online"`
 }
 
 type Status struct {

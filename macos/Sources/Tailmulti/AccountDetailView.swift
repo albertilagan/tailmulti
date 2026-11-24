@@ -172,32 +172,41 @@ struct DeviceTable: View {
                     Text(device.name).lineLimit(1).truncationMode(.middle)
                 }
             }
-            .width(min: 180, ideal: 300)
-            TableColumn("Address") { device in
-                Text(primaryAddress(device))
+            .width(min: 150, ideal: 230)
+            TableColumn("Local IP") { device in
+                Text(device.primaryAddress)
                     .font(.system(.body, design: .monospaced))
                     .foregroundStyle(.secondary)
                     .lineLimit(1)
             }
-            .width(min: 110, ideal: 150)
+            .width(min: 105, ideal: 130)
+            TableColumn("Tailscale IP") { device in
+                Text(device.primaryTailscaleAddress)
+                    .font(.system(.body, design: .monospaced))
+                    .foregroundStyle(.secondary)
+                    .lineLimit(1)
+            }
+            .width(min: 105, ideal: 130)
             TableColumn("Status") { device in
                 Text(device.online ? "Online" : "Offline")
                     .foregroundStyle(device.online ? .primary : .secondary)
             }
-            .width(min: 60, ideal: 70, max: 90)
+            .width(min: 55, ideal: 65, max: 85)
         }
         .tableStyle(.inset)
         .contextMenu(forSelectionType: Device.ID.self) { ids in
             if ids.count == 1, let device = devices.first(where: { ids.contains($0.id) }) {
                 Button("Copy Name") { copy(device.name) }
-                Button("Copy Address") { copy(primaryAddress(device)) }
+                if !device.primaryAddress.isEmpty {
+                    Button("Copy Local IP") { copy(device.primaryAddress) }
+                }
+                if !device.primaryTailscaleAddress.isEmpty {
+                    Button("Copy Tailscale IP") { copy(device.primaryTailscaleAddress) }
+                }
             }
         }
     }
 
-    private func primaryAddress(_ device: Device) -> String {
-        device.addresses.first { !$0.contains(":") } ?? device.addresses.first ?? ""
-    }
     private func copy(_ value: String) {
         NSPasteboard.general.clearContents()
         NSPasteboard.general.setString(value, forType: .string)

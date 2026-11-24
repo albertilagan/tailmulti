@@ -5,7 +5,7 @@ import AppKit
 @MainActor
 public final class DeviceMenuSection {
     private struct Snapshot: Equatable {
-        let id: String, name: String, addresses: [String], online: Bool
+        let id: String, name: String, addresses: [String], tailscaleAddresses: [String], online: Bool
     }
 
     public let accountID: String
@@ -101,7 +101,12 @@ public final class DeviceMenuSection {
             none.isEnabled = false
             submenu.addItem(none)
         }
+        var previousGroup: DeviceCopyItem.Group?
         for copy in copies {
+            if let previousGroup, previousGroup != copy.group {
+                submenu.addItem(.separator())
+            }
+            previousGroup = copy.group
             let entry = NSMenuItem(title: Self.copyTitle(copy, device: device), action: copyAction, keyEquivalent: "")
             entry.target = target
             entry.representedObject = copy.value
@@ -112,6 +117,6 @@ public final class DeviceMenuSection {
     }
 
     private static func makeSnapshot(_ devices: [Device]) -> [Snapshot] {
-        devices.map { Snapshot(id: $0.id, name: $0.name, addresses: $0.addresses, online: $0.online) }
+        devices.map { Snapshot(id: $0.id, name: $0.name, addresses: $0.addresses, tailscaleAddresses: $0.tailscaleAddresses, online: $0.online) }
     }
 }

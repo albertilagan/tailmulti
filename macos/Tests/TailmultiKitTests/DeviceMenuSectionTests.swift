@@ -12,7 +12,13 @@ final class DeviceMenuSectionTests: XCTestCase {
     }
 
     private func device(_ account: String, _ name: String, _ host: Int, online: Bool = true) -> Device {
-        Device(profileId: account, name: "\(name).\(account).ts.net", addresses: ["198.18.\(host / 256).\(host % 256)", "fd74:6169:6c6d::\(String(host, radix: 16))"], online: online)
+        Device(
+            profileId: account,
+            name: "\(name).\(account).ts.net",
+            addresses: ["198.18.\(host / 256).\(host % 256)", "fd74:6169:6c6d::\(String(host, radix: 16))"],
+            tailscaleAddresses: ["100.64.\(host / 256).\(host % 256)", "fd7a:115c:a1e0::\(String(host, radix: 16))"],
+            online: online
+        )
     }
 
     /// Two accounts with `count` devices each, a third offline, and identical names across accounts.
@@ -32,6 +38,10 @@ final class DeviceMenuSectionTests: XCTestCase {
         personal.update(all)
         XCTAssertEqual(visibleTitles(personal), ["nas"])
         XCTAssertEqual(personal.items.compactMap(\.toolTip), ["nas.personal.ts.net"])
+        personal.apply(query: "100.64.0.2")
+        XCTAssertEqual(visibleTitles(personal), ["nas"])
+        personal.apply(query: "100.64.0.3")
+        XCTAssertEqual(visibleTitles(personal), ["No Matching Devices"])
         personal.apply(query: "198.18.0.3")
         XCTAssertEqual(visibleTitles(personal), ["No Matching Devices"])
         personal.apply(query: "build")
@@ -69,10 +79,34 @@ final class DeviceMenuSectionTests: XCTestCase {
     func testCopyEntriesUseExactEngineValues() {
         let personal = section("personal")
         personal.update([device("personal", "nas", 2)])
-        let copies = personal.items.first?.submenu?.items.dropFirst().map { ($0.title, $0.representedObject as? String) }
-        XCTAssertEqual(copies?.map(\.0), ["Copy Hostname", "Copy IPv4: 198.18.0.2", "Copy IPv6: fd74:6169:6c6d::2"])
-        XCTAssertEqual(copies?.map(\.1), ["nas.personal.ts.net", "198.18.0.2", "fd74:6169:6c6d::2"])
-        XCTAssertEqual(personal.items.first?.submenu?.items.first?.title, "nas.personal.ts.net")
+        let submenuItems = personal.items.first?.submenu?.items ?? []
+        XCTAssertEqual(submenuItems.first?.title, "nas.personal.ts.net")
+        let entries = submenuItems.dropFirst()
+        XCTAssertEqual(entries.map { $0.isSeparatorItem ? "---" : $0.title }, [
+            "Copy Hostname",
+            "Copy Local IPv4: 198.18.0.2",
+            "Copy Local IPv6: fd74:6169:6c6d::2",
+            "---",
+            "Copy Tailscale IPv4: 100.64.0.2",
+            "Copy Tailscale IPv6: fd7a:115c:a1e0::2",
+        ])
+        let values = entries.filter { !$0.isSeparatorItem }.map { $0.representedObject as? String }
+        XCTAssertEqual(values, [
+            "nas.personal.ts.net",
+            "198.18.0.2",
+            "fd74:6169:6c6d::2",
+            "100.64.0.2",
+            "fd7a:115c:a1e0::2",
+        ])
+
+        // Older helpers omit Tailscale addresses; no trailing separator is added.
+        let legacy = section("personal")
+        legacy.update([Device(profileId: "personal", name: "nas.personal.ts.net", addresses: ["198.18.0.2"], online: true)])
+        let legacyEntries = legacy.items.first?.submenu?.items.dropFirst() ?? []
+        XCTAssertEqual(legacyEntries.map { $0.isSeparatorItem ? "---" : $0.title }, [
+            "Copy Hostname",
+            "Copy Local IPv4: 198.18.0.2",
+        ])
     }
 
     func testNeedsUpdateTracksEverythingARowShows() {
@@ -82,7 +116,8 @@ final class DeviceMenuSectionTests: XCTestCase {
         XCTAssertFalse(personal.needsUpdate(base))
         XCTAssertFalse(personal.needsUpdate([base[0], device("work", "other", 9)]), "other accounts don't matter")
         XCTAssertTrue(personal.needsUpdate([device("personal", "nas", 2, online: false)]))
-        XCTAssertTrue(personal.needsUpdate([Device(profileId: "personal", name: "nas.personal.ts.net", addresses: ["198.18.0.2"], online: true)]))
+        XCTAssertTrue(personal.needsUpdate([Device(profileId: "personal", name: "nas.personal.ts.net", addresses: ["198.18.0.2"], tailscaleAddresses: ["100.64.0.2", "fd7a:115c:a1e0::2"], online: true)]))
+        XCTAssertTrue(personal.needsUpdate([Device(profileId: "personal", name: "nas.personal.ts.net", addresses: ["198.18.0.2", "fd74:6169:6c6d::2"], tailscaleAddresses: ["100.64.0.99"], online: true)]))
         XCTAssertTrue(personal.needsUpdate([device("personal", "nas-renamed", 2)]))
     }
 

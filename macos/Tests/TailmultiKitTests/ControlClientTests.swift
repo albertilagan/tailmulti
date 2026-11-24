@@ -15,10 +15,13 @@ final class ControlClientTests: XCTestCase {
         XCTAssertThrowsError(try ControlClient.decodeHTTP(Data("HTTP/1.1 403 Forbidden\r\nContent-Length: \(error.utf8.count)\r\n\r\n\(error)".utf8)))
     }
     func testProtocolStatusFixture() throws {
-        let data = Data(#"{"version":1,"mode":"preview","health":"ready","accounts":[{"id":"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa","name":"Home","enabled":false,"state":"disconnected","peerCount":0}],"devices":[],"conflicts":[]}"#.utf8)
+        let data = Data(#"{"version":1,"mode":"preview","health":"ready","accounts":[{"id":"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa","name":"Home","enabled":false,"state":"disconnected","peerCount":0}],"devices":[{"profileId":"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa","name":"nas.home.ts.net","addresses":["198.18.0.2"],"tailscaleAddresses":["100.64.0.2","fd7a:115c:a1e0::2"],"online":true},{"profileId":"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa","name":"legacy.home.ts.net","addresses":["198.18.0.3"],"online":false}],"conflicts":[]}"#.utf8)
         let status = try JSONDecoder().decode(EngineStatus.self, from: data)
         XCTAssertEqual(status.accounts.first?.name, "Home")
         XCTAssertFalse(status.accounts[0].enabled)
+        XCTAssertEqual(status.devices.count, 2)
+        XCTAssertEqual(status.devices[0].tailscaleAddresses, ["100.64.0.2", "fd7a:115c:a1e0::2"])
+        XCTAssertEqual(status.devices[1].tailscaleAddresses, [])
     }
 }
 

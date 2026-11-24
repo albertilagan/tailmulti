@@ -22,7 +22,32 @@ public struct Device: Decodable, Identifiable, Sendable {
     public let profileId: String
     public let name: String
     public let addresses: [String]
+    /// Original Tailscale addresses supplied by the authenticated engine.
+    /// Defaults to empty for compatibility with an older running helper.
+    public let tailscaleAddresses: [String]
     public let online: Bool
+
+    private enum CodingKeys: String, CodingKey {
+        case profileId, name, addresses, tailscaleAddresses, online
+    }
+
+    public init(profileId: String, name: String, addresses: [String],
+                tailscaleAddresses: [String] = [], online: Bool) {
+        self.profileId = profileId
+        self.name = name
+        self.addresses = addresses
+        self.tailscaleAddresses = tailscaleAddresses
+        self.online = online
+    }
+
+    public init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        profileId = try c.decode(String.self, forKey: .profileId)
+        name = try c.decode(String.self, forKey: .name)
+        addresses = try c.decode([String].self, forKey: .addresses)
+        tailscaleAddresses = try c.decodeIfPresent([String].self, forKey: .tailscaleAddresses) ?? []
+        online = try c.decode(Bool.self, forKey: .online)
+    }
 }
 public struct EngineStatus: Decodable, Sendable {
     public let version: Int

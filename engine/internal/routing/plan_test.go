@@ -33,6 +33,20 @@ func TestTwoOverlappingTailnetsDisconnectAndRestart(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+	if len(p.Devices) != 2 {
+		t.Fatalf("devices: %+v", p.Devices)
+	}
+	for _, dev := range p.Devices {
+		if len(dev.Addresses) != 2 || len(dev.TailscaleAddresses) != 2 {
+			t.Fatalf("device addresses: %+v", dev)
+		}
+		if dev.TailscaleAddresses[0] != netip.MustParseAddr("100.64.0.2") || dev.TailscaleAddresses[1] != netip.MustParseAddr("fd7a:115c:a1e0::2") {
+			t.Fatalf("unexpected tailscale addresses: %+v", dev.TailscaleAddresses)
+		}
+	}
+	if p.Devices[0].Addresses[0] == p.Devices[1].Addresses[0] {
+		t.Fatal("overlapping local device addresses")
+	}
 	for family := 0; family < 2; family++ {
 		a, b := p.Records["server.home.ts.net"][family], p.Records["server.work.ts.net"][family]
 		if a == b {
