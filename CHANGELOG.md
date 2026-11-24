@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.7.3
+
+- **Device search in the main window**: search an account's device table by hostname, local IP, or original Tailscale IP, with **Edit > Find Devices…** (`⌘F`), match count, and `Esc` to clear.
+
 ## 0.7.2
 
 - **Original Tailscale IPs**: show each node's original Tailscale IP alongside its local Tailmulti IP in the account device table, each device's menu bar submenu (with separate copy actions and search matching), and `tailmulti devices`.
