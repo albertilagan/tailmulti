@@ -34,13 +34,8 @@ jobs:
     if: github.event_name == 'workflow_dispatch' && github.ref == format('refs/heads/{0}', github.event.repository.default_branch)
     runs-on: ubuntu-24.04
     timeout-minutes: 10
-    permissions:
-      contents: read
-      pages: write
-      id-token: write
-    environment:
-      name: github-pages
-      url: ${{ steps.deploy.outputs.page_url }}
+    outputs:
+      artifact_id: ${{ steps.upload.outputs.artifact_id }}
     env:
       PYTHONDONTWRITEBYTECODE: "1"
       GH_TOKEN: ${{ github.token }}
@@ -68,8 +63,53 @@ jobs:
           PY
           python3 scripts/appcast.py feed --releases items/releases.json --repo "$GH_REPO" --out site/appcast.xml
           cat site/appcast.xml
-      - uses: actions/upload-pages-artifact@fc324d3547104276b827a68afc52ff2a11cc49c9 # v5.0.0
+      - id: upload
+        uses: actions/upload-pages-artifact@fc324d3547104276b827a68afc52ff2a11cc49c9 # v5.0.0
         with:
+          name: github-pages-${{ github.run_attempt }}
           path: site
-      - id: deploy
-        uses: actions/deploy-pages@368f82528645a54fb793d4d04e342629a3f51346 # v5.0.1
+
+  deploy:
+    needs: feed
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deploy.outputs.page_url }}
+    steps:
+      - name: Deploy the uploaded artifact to Pages
+        id: deploy
+        env:
+          GH_TOKEN: ${{ github.token }}
+          ARTIFACT_ID: ${{ needs.feed.outputs.artifact_id }}
+        run: |
+          set -euo pipefail
+          endpoint="repos/$GITHUB_REPOSITORY/pages/deployments"
+          deployment=$(
+            curl --fail --silent --show-error \
+              -H "Authorization: Bearer $ACTIONS_ID_TOKEN_REQUEST_TOKEN" "$ACTIONS_ID_TOKEN_REQUEST_URL" |
+              jq -ce --argjson id "$ARTIFACT_ID" --arg sha "$GITHUB_SHA" \
+                '{artifact_id: $id, pages_build_version: $sha, oidc_token: .value} | select(.oidc_token | length > 0)' |
+              gh api --method POST "$endpoint" --input -
+          )
+          id=$(jq -er '.id // (.status_url | split("/") | last)' <<< "$deployment")
+          echo "page_url=$(jq -er '.page_url' <<< "$deployment")" >> "$GITHUB_OUTPUT"
+
+          trap 'gh api --method POST "$endpoint/$id/cancel" --silent || true' EXIT
+          trap 'exit 1' INT TERM
+          for attempt in {1..60}; do
+            if status=$(gh api "$endpoint/$id" --jq .status); then
+              echo "Pages deployment $id: $status"
+              case "$status" in
+                succeed) trap - EXIT; exit 0 ;;
+                deployment_failed|deployment_content_failed|deployment_cancelled|deployment_lost)
+                  trap - EXIT; exit 1 ;;
+              esac
+            fi
+            sleep 10
+          done
+          echo "::error::Timed out waiting for Pages deployment $id."
+          exit 1
