@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.7.4
+
+- Tailmulti shows an orange dot on its menu bar icon when Sparkle finds an update. Choose **Update to…** in the menu to open the update window. Critical updates still use Sparkle's alert.
+
 ## 0.7.3
 
 - **Device search in the main window**: search an account's device table by hostname, local IP, or original Tailscale IP, with **Edit > Find Devices…** (`⌘F`), match count, and `Esc` to clear.
