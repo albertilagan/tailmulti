@@ -5,13 +5,15 @@ import Sparkle
 /// Sparkle updates for Developer ID releases only. Development and ad-hoc builds never replace themselves
 /// with a release, which would also mix signing identities for the background service.
 @MainActor
-final class AppUpdater: ObservableObject {
-    private let controller: SPUStandardUpdaterController?
+final class AppUpdater: NSObject, ObservableObject, @preconcurrency SPUStandardUserDriverDelegate {
+    private var controller: SPUStandardUpdaterController?
     @Published private(set) var canCheck = false
+    @Published private(set) var availableVersion: String?
 
-    init() {
-        guard Self.isReleaseBuild else { controller = nil; return }
-        let controller = SPUStandardUpdaterController(startingUpdater: true, updaterDelegate: nil, userDriverDelegate: nil)
+    override init() {
+        super.init()
+        guard Self.isReleaseBuild else { return }
+        let controller = SPUStandardUpdaterController(startingUpdater: true, updaterDelegate: nil, userDriverDelegate: self)
         self.controller = controller
         controller.updater.publisher(for: \.canCheckForUpdates).assign(to: &$canCheck)
     }
@@ -27,6 +29,26 @@ final class AppUpdater: ObservableObject {
     }
 
     func checkForUpdates() { controller?.checkForUpdates(nil) }
+
+    var commandTitle: String {
+        availableVersion.map { "Update to \($0)…" } ?? "Check for Updates…"
+    }
+
+    var supportsGentleScheduledUpdateReminders: Bool { true }
+
+    func standardUserDriverShouldHandleShowingScheduledUpdate(_ update: SUAppcastItem,
+                                                              andInImmediateFocus immediateFocus: Bool) -> Bool {
+        update.isCriticalUpdate
+    }
+
+    func standardUserDriverWillHandleShowingUpdate(_ handleShowingUpdate: Bool, forUpdate update: SUAppcastItem,
+                                                  state: SPUUserUpdateState) {
+        availableVersion = update.displayVersionString
+    }
+
+    func standardUserDriverWillFinishUpdateSession() {
+        availableVersion = nil
+    }
 
     /// Release bundles record Developer ID signing in their setup manifest and carry a feed URL.
     private static var isReleaseBuild: Bool {
@@ -44,7 +66,7 @@ struct CheckForUpdatesCommand: View {
 
     var body: some View {
         if updater.isAvailable {
-            Button("Check for Updates...") { updater.checkForUpdates() }
+            Button(updater.commandTitle) { updater.checkForUpdates() }
                 .disabled(!updater.canCheck)
         }
     }

@@ -52,7 +52,7 @@ private struct GeneralSettings: View {
                     Toggle("Check for updates automatically", isOn: Binding(
                         get: { updater.automaticallyChecks }, set: { updater.automaticallyChecks = $0 }))
                     LabeledContent("Version \(Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "")") {
-                        Button("Check for Updates...") { updater.checkForUpdates() }.disabled(!updater.canCheck)
+                        Button(updater.commandTitle) { updater.checkForUpdates() }.disabled(!updater.canCheck)
                     }
                 }
             }

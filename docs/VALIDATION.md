@@ -1,5 +1,9 @@
 # Validation
 
+## Menu bar update reminder, 2026-11-26
+
+The macOS app built successfully. The Swift suite passed 74 tests and skipped two gated tests. A simulated Sparkle update changed the command to show the available version and restored **Check for Updates…** when the session ended. The dot's appearance during a live signed update still needs verification.
+
 ## Open-source preparation, 2026-11-04
 
 The new `scripts/check.sh` passed locally: source audit, all 185 reference-file

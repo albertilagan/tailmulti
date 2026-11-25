@@ -9,11 +9,13 @@ final class StatusMenuController: NSObject, NSMenuDelegate {
     let model: EngineModel
     let updater: AppUpdater
     private let statusItem: NSStatusItem
+    private let updateDot = UpdateDot()
     private let menu = NSMenu()
     private let header = MenuHeaderView()
     private lazy var headerItem = NSMenuItem.hosting(header)
     private let addItem = NSMenuItem(title: "Add Account…", action: #selector(addAccount), keyEquivalent: "")
     private let retryItem = NSMenuItem(title: "Retry", action: #selector(retryNetworking), keyEquivalent: "")
+    private lazy var updateItem = item(updater.commandTitle, #selector(checkForUpdates))
     private var accountMenus: [String: AccountMenu] = [:]
     private var layoutKey = ""
     private var isOpen = false
@@ -30,6 +32,17 @@ final class StatusMenuController: NSObject, NSMenuDelegate {
         menu.delegate = self
         menu.autoenablesItems = false
         statusItem.menu = menu
+        if let button = statusItem.button {
+            updateDot.translatesAutoresizingMaskIntoConstraints = false
+            updateDot.setAccessibilityElement(false)
+            button.addSubview(updateDot)
+            NSLayoutConstraint.activate([
+                updateDot.widthAnchor.constraint(equalToConstant: 6),
+                updateDot.heightAnchor.constraint(equalTo: updateDot.widthAnchor),
+                updateDot.centerXAnchor.constraint(equalTo: button.centerXAnchor, constant: 7),
+                updateDot.topAnchor.constraint(equalTo: button.centerYAnchor, constant: -10),
+            ])
+        }
         addItem.target = self
         retryItem.target = self
         header.onToggle = { [weak self] on in
@@ -39,7 +52,7 @@ final class StatusMenuController: NSObject, NSMenuDelegate {
         }
         // objectWillChange fires before the mutation; the task reads the new values. Tasks on the
         // main actor also run while a menu is tracking, so an open menu stays current.
-        changes = model.objectWillChange.sink { [weak self] _ in
+        changes = model.objectWillChange.merge(with: updater.objectWillChange).sink { [weak self] _ in
             Task { @MainActor in self?.requestRefresh() }
         }
         updateButton()
@@ -82,13 +95,16 @@ final class StatusMenuController: NSObject, NSMenuDelegate {
 
     private func updateButton() {
         guard let button = statusItem.button else { return }
-        let description = "Tailmulti, \(model.connected) connected"
+        let updateHint = updater.availableVersion.map { ", update to \($0) available" } ?? ""
+        let description = "Tailmulti, \(model.connected) connected\(updateHint)"
         let image = model.needsAttention
             ? NSImage(systemSymbolName: "exclamationmark.triangle", accessibilityDescription: description)
             : Self.dotGrid(connected: model.connected > 0, description: description)
         image?.isTemplate = true
         button.image = image
-        button.toolTip = "Tailmulti: \(model.networkSummary)"
+        updateDot.isHidden = updater.availableVersion == nil
+        button.toolTip = "Tailmulti: \(model.networkSummary)\(updateHint)"
+        button.setAccessibilityLabel(button.toolTip)
     }
 
     /// The app icon's 4x4 dot grid as a monochrome template: both corner groups solid while connected,
@@ -150,7 +166,8 @@ final class StatusMenuController: NSObject, NSMenuDelegate {
 
         menu.addItem(item("Open Tailmulti", #selector(openMain)))
         if updater.isAvailable {
-            menu.addItem(item("Check for Updates…", #selector(checkForUpdates)))
+            updateCommand()
+            menu.addItem(updateItem)
         }
         menu.addItem(item("Settings…", #selector(openSettings), key: ","))
         menu.addItem(.separator())
@@ -161,9 +178,15 @@ final class StatusMenuController: NSObject, NSMenuDelegate {
 
     private func updateRoot() {
         updateHeader()
+        updateCommand()
         retryItem.isEnabled = retryEnabled
         addItem.isEnabled = model.canAddAccount
         for account in model.accounts { accountMenus[account.id]?.updateRootItem(account) }
+    }
+
+    private func updateCommand() {
+        updateItem.title = updater.commandTitle
+        updateItem.isEnabled = updater.canCheck
     }
 
     private func updateHeader() {
@@ -196,6 +219,16 @@ final class StatusMenuController: NSObject, NSMenuDelegate {
         model.selection = accountID
         SceneActions.shared.showMain()
     }
+}
+
+/// Separate from the template image so AppKit can tint the connection icon independently.
+private final class UpdateDot: NSView {
+    override func draw(_ dirtyRect: NSRect) {
+        NSColor.systemOrange.setFill()
+        NSBezierPath(ovalIn: bounds).fill()
+    }
+
+    override func hitTest(_ point: NSPoint) -> NSView? { nil }
 }
 
 /// One account's submenu: its connection action, search, and only that account's devices.
